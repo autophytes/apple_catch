@@ -11,13 +11,20 @@ def main():
     player_victory = False
     starting_width = int(width/2)
     starting_height = int(height - 50)
+
+    # Time Counters
     next_apple_time = time.time()
-    next_worm_time = time.time() + 5
+    next_worm_time = time.time() + 2
+    next_poison_time = time.time() + random.randint(10, 40)
+    next_golden_apple = time.time() + random.randint(25, 55) # make this much longer
+    next_extra_jump = time.time() + random.randint(1, 2)
+    extra_jump_ending_time = time.time() + 9999
 
     # Interactive Variables
     level = 1
     lives_remaining = 3
     game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
+    has_extra_jump = False
 
     # Setting up the screen and clock
     pygame.init()
@@ -56,7 +63,7 @@ def main():
 
         # --- Insert Code ---
 
-        def update(self, pressed_keys):
+        def update(self, pressed_keys, has_extra_jump):
             if pressed_keys[K_LEFT] or pressed_keys[K_a]:         # West
                 self.rect.move_ip(-self.speed, 0)
             elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
@@ -68,7 +75,12 @@ def main():
                 self.rect.left = 50
 
             if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
-                self.isJump = True        
+                self.isJump = True     
+
+            if has_extra_jump:
+                self.velocity_reset = 9
+            else:
+                self.velocity_reset = 6
 
             if self.isJump:
                 self.force = self.momentum * self.velocity
@@ -102,12 +114,7 @@ def main():
         def calculate_x(self):
             return random.randint(50, width - 50)
 
-    class Apple(Falling_Object):  # NOTE: switch to Falling_Object eventually
-        # --- Insert Code ---
-        #  Ideas:
-        #  -  Golden apple is an instant X apples collected
-
-
+    class Apple(Falling_Object):
         # NOTE: Perhaps add level as an argument and use that to adjust variables
         def __init__(self):
             super(Apple, self).__init__()
@@ -123,10 +130,18 @@ def main():
             # Add to Groups
             all_catchables.add(self)
 
-    class Worm(Falling_Object):
-        #  Ideas
-        #  -  Potentially adding a squirrel/raccoon that is an instant loss rather than just -1 life
+    class Golden_Apple(Falling_Object):
+        def __init__(self):
+            super(Golden_Apple, self).__init__()
 
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((212, 175, 55))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+            self.speed = random.randint(1, 3)
+
+            all_catchables.add(self)
+
+    class Worm(Falling_Object):
         def __init__(self, level):
             super(Worm, self).__init__()
 
@@ -145,13 +160,35 @@ def main():
             all_avoidables.add(self)
 
     class Poison_Apple(Falling_Object):
-        # This will be an instant game over if the person catches it
+        # An instant game over
+        def __init__(self, level):
+            super(Poison_Apple, self).__init__()
 
-        # def __init__(self, level):
-        #     super(Poison_Apple), 
-        pass
+            # Object Surface Properties
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((148, 178, 28))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
+            self.level = level
+            
+            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
 
+            # Add to Groups
+            all_avoidables.add(self)
+
+    class Extra_Jump(Falling_Object):
+
+        # NOTE: I should change this to only show up in later levels
+
+        def __init__(self):
+            super(Extra_Jump, self).__init__()
+
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((20, 20, 210))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+            self.speed = random.randint(1, 3)
+
+            all_catchables.add(self)
 
     class Booster(Falling_Object):
         # --- Insert Code ---
@@ -197,8 +234,8 @@ def main():
         apples_needed = 10  # NOTE: change this to level based
 
         # Worm Time - Toggles based on level. NOTE: need to fine tune. Probably reduce time. Exponential?
-        min_worm_time = max(3.25 - level * 0.25, 0.5)
-        max_worm_time = max(6.5 - level * 0.5, 1)
+        min_worm_time = max(2.15 - level * 0.2, 0.5)
+        max_worm_time = max(4.9 - level * 0.4, 1)
         print(min_worm_time)
         print(max_worm_time)
 
@@ -225,31 +262,59 @@ def main():
 
             # Create Falling Objects
             if time.time() > next_apple_time:
-                apple = Apple()
-                next_apple_time = time.time() + random.randint(1, 3)
+                Apple()
+                next_apple_time = time.time() + random.randint(0, 3)
             if time.time() > next_worm_time:
-                worm = Worm(level)
+                Worm(level)
                 next_worm_time = time.time() + random.random() * (max_worm_time - min_worm_time) + min_worm_time
+            if time.time() > next_poison_time:
+                Poison_Apple(level)
+                next_poison_time = time.time() + random.random() * random.randint(10, 40)
+            if time.time() > next_golden_apple:
+                Golden_Apple()
+                next_golden_apple = time.time() + random.random() * random.randint(25, 55)
+            if time.time() > next_extra_jump:
+                Extra_Jump()
+                next_extra_jump = time.time() + random.random() * random.randint(25, 55)
+
+            # Checks and removes status effects
+            if has_extra_jump:
+                if time.time() > extra_jump_ending_time:
+                    has_extra_jump = False
+            
 
             # Update Objects
             # --- Insert Code ---
-            player.update(pygame.key.get_pressed())
+            player.update(pygame.key.get_pressed(), has_extra_jump)
             for entity in all_falling:
                 entity.update()
 
             # Check for Collisions
             # --- Insert Code ---
             if player_loss == False and player_victory == False:
+                # For the GOOD items
                 for catchable in all_catchables:
                     if pygame.sprite.collide_rect(player, catchable):
                         catchable.kill()
                         catchable.rect.top = height + 100
-                        apples_caught += 1
+                        if type(catchable) == Apple:
+                            apples_caught += 1
+                        elif type(catchable) == Golden_Apple:
+                            apples_caught += 5
+                        elif type(catchable) == Extra_Jump:
+                            has_extra_jump = True
+                            extra_jump_ending_time = time.time() + 15
+                # For the BAD items
                 for avoidable in all_avoidables:
                     if pygame.sprite.collide_rect(player, avoidable):
                         avoidable.kill()
                         avoidable.rect.top = height + 100
-                        lives_remaining -= 1
+                        if type(avoidable) == Worm:
+                            print("The type match worked")
+                            lives_remaining -= 1
+                        elif type(avoidable) == Poison_Apple:
+                            lives_remaining = 0
+                            player_loss = True
 
             # TIME UP: Win or Lose
             if apples_caught >= apples_needed:
@@ -273,8 +338,7 @@ def main():
             # Draw All Objects
             for entity in all_falling:
                 screen.blit(entity.surf, entity.rect)
-            # Done separate to ensure the player is drawn on top. If we want the player behind the falling objects, change the for loop to all_entities
-            screen.blit(player.surf, player.rect)
+            screen.blit(player.surf, player.rect)       # so the player is on top
 
             # Draw Victory/Loss Message
             if player_victory:
