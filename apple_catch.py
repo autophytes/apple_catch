@@ -17,14 +17,17 @@ def main():
     next_worm_time = time.time() + 2
     next_poison_time = time.time() + random.randint(10, 40)
     next_golden_apple = time.time() + random.randint(25, 55) # make this much longer
-    next_extra_jump = time.time() + random.randint(1, 2)
-    extra_jump_ending_time = time.time() + 9999
+    next_extra_jump = time.time() + random.randint(25, 55)
+    next_speed_boost = time.time() + random.randint(1, 2)
+    extra_jump_ending_time = 0
+    speed_boost_ending_time = 0
 
     # Interactive Variables
     level = 1
     lives_remaining = 3
     game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
     has_extra_jump = False
+    has_speed_boost = False
 
     # Setting up the screen and clock
     pygame.init()
@@ -63,7 +66,7 @@ def main():
 
         # --- Insert Code ---
 
-        def update(self, pressed_keys, has_extra_jump):
+        def update(self, pressed_keys, has_extra_jump, has_speed_boost):
             if pressed_keys[K_LEFT] or pressed_keys[K_a]:         # West
                 self.rect.move_ip(-self.speed, 0)
             elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
@@ -72,15 +75,23 @@ def main():
             if self.rect.right > width-50:
                 self.rect.right = width-50
             elif self.rect.left < 50:
-                self.rect.left = 50
+                self.rect.left = 50  
 
-            if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
-                self.isJump = True     
-
+            # Extra Jump
             if has_extra_jump:
                 self.velocity_reset = 9
             else:
                 self.velocity_reset = 6
+
+            # Speed Boost
+            if has_speed_boost:
+                self.speed = 9
+            else:
+                self.speed = 5
+
+            # Calculate Jump
+            if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
+                self.isJump = True   
 
             if self.isJump:
                 self.force = self.momentum * self.velocity
@@ -190,11 +201,22 @@ def main():
 
             all_catchables.add(self)
 
+    class Speed_Boost(Falling_Object):
+        def __init__(self):
+            super(Speed_Boost, self).__init__()
+
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((175, 55, 212))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+            self.speed = random.randint(1, 3)
+
+            all_catchables.add(self)
+
+
     class Booster(Falling_Object):
         # --- Insert Code ---
         # Should booster item types be a sub class, or just have different functions within this class?
         #  -  Extra Life
-        #  -  Jump Higher
         #  -  Speed Boost
         #  -  Reduced Worms 
         #  -  Increased Apples / Apple Speed
@@ -202,7 +224,6 @@ def main():
         #  -  Increased catch width
         #  -  Slow down time
         pass
-
 
 
 
@@ -276,16 +297,23 @@ def main():
             if time.time() > next_extra_jump:
                 Extra_Jump()
                 next_extra_jump = time.time() + random.random() * random.randint(25, 55)
+            if time.time() > next_speed_boost:
+                Speed_Boost()
+                next_speed_boost = time.time() + random.random() * random.randint(25, 55)
 
             # Checks and removes status effects
             if has_extra_jump:
                 if time.time() > extra_jump_ending_time:
                     has_extra_jump = False
+
+            if has_speed_boost:
+                if time.time() > speed_boost_ending_time:
+                    has_speed_boost = False
             
 
             # Update Objects
             # --- Insert Code ---
-            player.update(pygame.key.get_pressed(), has_extra_jump)
+            player.update(pygame.key.get_pressed(), has_extra_jump, has_speed_boost)
             for entity in all_falling:
                 entity.update()
 
@@ -303,7 +331,10 @@ def main():
                             apples_caught += 5
                         elif type(catchable) == Extra_Jump:
                             has_extra_jump = True
-                            extra_jump_ending_time = time.time() + 15
+                            extra_jump_ending_time = time.time() + 10
+                        elif type(catchable) == Speed_Boost:
+                            has_speed_boost = True
+                            speed_boost_ending_time = time.time() + 10
                 # For the BAD items
                 for avoidable in all_avoidables:
                     if pygame.sprite.collide_rect(player, avoidable):
