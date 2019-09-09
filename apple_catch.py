@@ -17,8 +17,7 @@ def main():
     # Interactive Variables
     level = 1
     lives_remaining = 3
-    game_length = 30
-
+    game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
 
     # Setting up the screen and clock
     pygame.init()
@@ -26,16 +25,18 @@ def main():
     pygame.display.set_caption('Apple Catch')
     clock = pygame.time.Clock()
 
-    # Initialize Sounds
+    # Initialize Sounds NOTE: Find and set up sounds.
     # --- Insert Code ---
 
     # Initializing Text
     # --- Insert Code ---
     font = pygame.font.Font(None, 30)
-    victory_message = font.render('Victory! To play again, press ENTER', True, (255, 255, 255))
+    victory_message = font.render('Victory! Press ENTER to continue', True, (255, 255, 255))
     victory_rect = victory_message.get_rect(center=(int(width/2), int(height/2)))
-    loss_message = font.render('Loser! To play again, press ENTER', True, (255, 255, 255))
+    loss_message = font.render('You lost! To play again, press ENTER', True, (255, 255, 255))
     loss_rect = loss_message.get_rect(center=(int(width/2), int(height/2)))
+
+
 
     # Object Classes
     class Player(pygame.sprite.Sprite):
@@ -56,9 +57,9 @@ def main():
         # --- Insert Code ---
 
         def update(self, pressed_keys):
-            if pressed_keys[K_LEFT]:                          # West
+            if pressed_keys[K_LEFT] or pressed_keys[K_a]:         # West
                 self.rect.move_ip(-self.speed, 0)
-            elif pressed_keys[K_RIGHT]:                         # East
+            elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
                 self.rect.move_ip(self.speed, 0)   
 
             if self.rect.right > width-50:
@@ -66,7 +67,7 @@ def main():
             elif self.rect.left < 50:
                 self.rect.left = 50
 
-            if pressed_keys[K_SPACE]:
+            if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
                 self.isJump = True        
 
             if self.isJump:
@@ -103,6 +104,10 @@ def main():
 
     class Apple(Falling_Object):  # NOTE: switch to Falling_Object eventually
         # --- Insert Code ---
+        #  Ideas:
+        #  -  Golden apple is an instant X apples collected
+
+
         # NOTE: Perhaps add level as an argument and use that to adjust variables
         def __init__(self):
             super(Apple, self).__init__()
@@ -119,7 +124,10 @@ def main():
             all_catchables.add(self)
 
     class Worm(Falling_Object):
-        def __init__(self):
+        #  Ideas
+        #  -  Potentially adding a squirrel/raccoon that is an instant loss rather than just -1 life
+
+        def __init__(self, level):
             super(Worm, self).__init__()
 
             # Object Surface Properties
@@ -128,16 +136,34 @@ def main():
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
                 # self.test = self.calculate_x()
                 # print("Starting x is {}".format(self.test))
+            self.level = level
 
-            self.speed = random.randint(1, 3)
-            # self.speed = int(random.randint(1, 3) * (level-1)/5) #NOTE: Need to convert this to just Random() like the other one
+            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
             print(self.speed)
 
             # Add to Groups
             all_avoidables.add(self)
 
+    class Poison_Apple(Falling_Object):
+        # This will be an instant game over if the person catches it
+
+        # def __init__(self, level):
+        #     super(Poison_Apple), 
+        pass
+
+
+
     class Booster(Falling_Object):
         # --- Insert Code ---
+        # Should booster item types be a sub class, or just have different functions within this class?
+        #  -  Extra Life
+        #  -  Jump Higher
+        #  -  Speed Boost
+        #  -  Reduced Worms 
+        #  -  Increased Apples / Apple Speed
+        #  -  Invincibility
+        #  -  Increased catch width
+        #  -  Slow down time
         pass
 
 
@@ -170,7 +196,7 @@ def main():
         apples_caught = 0
         apples_needed = 10  # NOTE: change this to level based
 
-        # Worm Time - Toggles based on level. NOTE: need to fine tune
+        # Worm Time - Toggles based on level. NOTE: need to fine tune. Probably reduce time. Exponential?
         min_worm_time = max(3.25 - level * 0.25, 0.5)
         max_worm_time = max(6.5 - level * 0.5, 1)
         print(min_worm_time)
@@ -202,7 +228,7 @@ def main():
                 apple = Apple()
                 next_apple_time = time.time() + random.randint(1, 3)
             if time.time() > next_worm_time:
-                worm = Worm()
+                worm = Worm(level)
                 next_worm_time = time.time() + random.random() * (max_worm_time - min_worm_time) + min_worm_time
 
             # Update Objects
@@ -261,7 +287,7 @@ def main():
             
             # Calculate & Print Time Remaining
             if not player_victory and not player_loss:
-                time_remaining = max(int(end_time - time.time() + 1), 0)
+                time_remaining = max(int(end_time - time.time()), 0)
             time_message = font.render('Time Remaining: {}'.format(time_remaining), True, (255, 255, 255))
             time_rect = time_message.get_rect(topright=(width - 20, 20))
             screen.blit(time_message, time_rect)
