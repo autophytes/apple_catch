@@ -118,7 +118,7 @@ def main():
             # Add to Groups
             all_catchables.add(self)
 
-    class Worm(Falling_Object, level):
+    class Worm(Falling_Object):
         def __init__(self):
             super(Worm, self).__init__()
 
@@ -128,8 +128,9 @@ def main():
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
                 # self.test = self.calculate_x()
                 # print("Starting x is {}".format(self.test))
-                
-            self.speed = int(random.randint(1, 3) * (level-1)/5) #NOTE: Need to convert this to just Random() like the other one
+
+            self.speed = random.randint(1, 3)
+            # self.speed = int(random.randint(1, 3) * (level-1)/5) #NOTE: Need to convert this to just Random() like the other one
             print(self.speed)
 
             # Add to Groups
