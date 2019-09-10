@@ -68,6 +68,13 @@ def main():
     #class image index
     player_img = pygame.image.load('images/guy_with_basket.png')
     apple_img = pygame.image.load('images/goodapple.png')
+    gold_apple_img = pygame.image.load('images/goldapple.png')
+    worm_img = pygame.image.load('images/worm.png')
+    bad_apple_img = pygame.image.load('images/badapple.png')
+    extra_jump_img = pygame.image.load('images/extra_jump.png')
+    speed_img = pygame.image.load('images/speed.png')
+    red_heart_img = pygame.image.load('images/redheart.png')
+    slow_img = pygame.image.load('images/slow.png')
 
     # * * * * * * * * * * * * *
     # * * *    CLASSES    * * *
@@ -77,7 +84,7 @@ def main():
         # Initialize
         def __init__(self):
             super(Player, self).__init__()
-            self.surf = pygame.transform.scale(player_img, (100, 100))
+            self.surf = pygame.transform.scale(player_img, (100, 100)).convert_alpha()
             # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(starting_width, starting_height))
             self.speed = 5
@@ -163,7 +170,7 @@ def main():
             super(Apple, self).__init__()
             
             # Object Surface Properties
-            self.surf = pygame.transform.scale(apple_img, (100, 100))
+            self.surf = pygame.transform.scale(apple_img, (50, 50)).convert_alpha()
             # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
                 
@@ -175,8 +182,8 @@ def main():
             super(Golden_Apple, self).__init__()
 
             # Object surface properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((212, 175, 55))
+            self.surf = pygame.transform.scale(gold_apple_img, (61, 50)).convert_alpha()
+            # self.surf.fill((212, 175, 55))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
             # Add to Group
@@ -188,8 +195,8 @@ def main():
             super(Worm, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((0, 0, 0))
+            self.surf = pygame.transform.scale(worm_img, (40, 40)).convert_alpha()
+            # self.surf.fill((0, 0, 0))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
             # Variables
@@ -205,8 +212,8 @@ def main():
             super(Poison_Apple, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((148, 178, 28))
+            self.surf = pygame.transform.scale(bad_apple_img, (50, 50)).convert_alpha()
+            # self.surf.fill((148, 178, 28))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
             # Variables
@@ -222,8 +229,8 @@ def main():
             super(Extra_Jump, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((20, 20, 210))
+            self.surf = pygame.transform.scale(extra_jump_img, (35, 40)).convert_alpha()
+            # self.surf.fill((20, 20, 210))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
             # Add to Group
@@ -235,8 +242,8 @@ def main():
             super(Speed_Boost, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((175, 55, 212))
+            self.surf = pygame.transform.scale(speed_img, (35, 35)).convert_alpha()
+            # self.surf.fill((175, 55, 212))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
             # Variables
@@ -249,8 +256,8 @@ def main():
         def __init__(self):
             super(Extra_Lives, self).__init__()
 
-            self.surf = pygame.Surface((10, 10))
-            self.surf.fill((240, 180, 240))
+            self.surf = pygame.transform.scale(red_heart_img, (50, 50)).convert_alpha()
+            # self.surf.fill((240, 180, 240))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
             all_catchables.add(self)
@@ -261,8 +268,8 @@ def main():
             super(Turtle, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((240, 94, 35))
+            self.surf = pygame.transform.scale(slow_img, (40, 40)).convert_alpha()
+            # self.surf.fill((240, 94, 35))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
             # Variables
@@ -480,7 +487,7 @@ def main():
             lives_rect = lives_message.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
             screen.blit(lives_message, lives_rect)
 
-            if lives_remaining == 5:
+            #if lives_remaining == 5:
 
             # Print Level
             level_message = font.render('Level {}'.format(level), True, (255, 255, 255))
@@ -489,7 +496,7 @@ def main():
 
             # Refresh Game Display
             pygame.display.update()
-            clock.tick(60)
+            # clock.tick(60)
             print(clock.get_fps())
 
     pygame.quit()
