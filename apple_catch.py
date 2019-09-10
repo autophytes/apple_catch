@@ -5,7 +5,7 @@ import time
 
 def main():
     # * * * * * * * * * * * * *
-    # * * *  INITIALIZING  * * *
+    # * * * INITIALIZING  * * *
     # * * * * * * * * * * * * *
 
     # Constants
@@ -44,16 +44,22 @@ def main():
 
     # Initializing Text
     font = pygame.font.Font(None, 30)
-    victory_message = font.render('Victory! Press ENTER to continue', True, (255, 255, 255))
+    victory_message = font.render('Level Won! Press ENTER to continue', True, (255, 255, 255))
     victory_rect = victory_message.get_rect(center=(int(width/2), int(height/2)))
     loss_message = font.render('You lost! To play again, press ENTER', True, (255, 255, 255))
     loss_rect = loss_message.get_rect(center=(int(width/2), int(height/2)))
+    game_won_message = font.render('Congratulations! You Won! To play again, press ENTER', True, (255, 255, 255))
+    game_won_rect = game_won_message.get_rect(center=(int(width/2), int(height/2)))
 
     # Create All Sprite Groups
     all_catchables = pygame.sprite.Group()
     all_avoidables = pygame.sprite.Group()
     all_falling = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
+
+    # Load images into memory
+    bg_image = pygame.image.load('images/background_cropped.png')
+    bg_image = pygame.transform.scale(bg_image, (600, 600)).convert()
 
 
 
@@ -243,16 +249,16 @@ def main():
 
 
 
-    # * * * * * * * * * * * * *
-    # * * *OUTER GAME LOOP* * *
-    # * * * * * * * * * * * * *
+    # * * * * * * * * * * * * * *
+    # * * * OUTER GAME LOOP * * *
+    # * * * * * * * * * * * * * *
     
     # OUTER LOOP - New Levels & New Games
     repeat_game = True
     while repeat_game:
 
         # Level Increment
-        if player_victory == True:
+        if player_victory and level < 10:
             level += 1
         else: # New Game
             level = 1
@@ -274,6 +280,8 @@ def main():
 
         # Create Our Player
         player = Player()
+
+
 
         # * * * * * * * * * * * * * *
         # * * * INNER GAME LOOP * * *
@@ -362,7 +370,6 @@ def main():
                         avoidable.kill()
                         avoidable.rect.top = height + 100
                         if type(avoidable) == Worm:
-                            print("The type match worked")
                             lives_remaining -= 1
                         elif type(avoidable) == Poison_Apple:
                             lives_remaining = 0
@@ -383,8 +390,9 @@ def main():
             # * * * * * * * * * * * * * * * *
 
             # Draw Background
-            screen.fill(blue_color)
+            # screen.fill(blue_color)
             # *** THIS WILL BE CHANGED WITH THE IMAGES ***
+            screen.blit(bg_image, (0, 0))
 
             # Draw All Objects
             for entity in all_falling:
@@ -392,7 +400,9 @@ def main():
             screen.blit(player.surf, player.rect)
 
             # Draw Victory/Loss Message
-            if player_victory:
+            if player_victory and level == 10:
+                screen.blit(game_won_message, game_won_rect)
+            elif player_victory:
                 screen.blit(victory_message, victory_rect)
             elif player_loss:
                 screen.blit(loss_message, loss_rect)
@@ -422,6 +432,7 @@ def main():
             # Refresh Game Display
             pygame.display.update()
             clock.tick(60)
+            print(clock.get_fps())
 
     pygame.quit()
 
