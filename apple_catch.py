@@ -17,11 +17,8 @@ def main():
 
     # Variables
     level = 1
-    lives_remaining = 3
+    max_lives = 5
     game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
-    has_extra_jump = False
-    has_speed_boost = False
-    has_turtle = False
     player_victory = False
 
     # Time Counters
@@ -55,11 +52,24 @@ def main():
     game_won_message = font.render('Congratulations! You Won! To play again, press ENTER', True, (255, 255, 255))
     game_won_rect = game_won_message.get_rect(center=(int(width/2), int(height/2)))
 
+    # Victory / Loss Overlay
+    overlay_surf = pygame.Surface((width, height))
+    overlay_surf.fill((0, 0, 0))
+    overlay_surf.set_alpha(70)
+    overlay_surf = overlay_surf.convert_alpha()
+    overlay_rect = overlay_surf.get_rect()
+
     # Create All Sprite Groups
     all_catchables = pygame.sprite.Group()
     all_avoidables = pygame.sprite.Group()
     all_falling = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
+
+    # Load Health Images
+    red_health_img = pygame.image.load('images/redheart.png')
+    red_health_img = pygame.transform.scale(red_health_img, (25, 25)).convert_alpha()
+    gray_health_img = pygame.image.load('images/grayheart.png')
+    gray_health_img = pygame.transform.scale(gray_health_img, (25, 25)).convert_alpha()
 
     # Load images into memory
     bg_image = pygame.image.load('images/background_cropped.png')
@@ -77,7 +87,7 @@ def main():
         # Initialize
         def __init__(self):
             super(Player, self).__init__()
-            self.surf = pygame.transform.scale(player_img, (100, 100))
+            self.surf = pygame.transform.scale(player_img, (100, 100)).convert_alpha()
             # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(starting_width, starting_height))
             self.speed = 5
@@ -163,7 +173,7 @@ def main():
             super(Apple, self).__init__()
             
             # Object Surface Properties
-            self.surf = pygame.transform.scale(apple_img, (100, 100))
+            self.surf = pygame.transform.scale(apple_img, (100, 100)).convert_alpha()
             # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
                 
@@ -300,15 +310,18 @@ def main():
             level += 1
         else: # New Game
             level = 1
-            lives_remaining = 3
+            lives_remaining = max_lives
 
         # Variable Resets
         stop_game = False
         player_victory = False
         player_loss = False
+        has_extra_jump = False
+        has_speed_boost = False
+        has_turtle = False
         end_time = time.time() + game_length
         apples_caught = 0
-        apples_needed = 10  # NOTE: change this to level based
+        apples_needed = 10
 
         # Worm Time - Toggles based on level. NOTE: need to fine tune. Probably reduce time. Exponential?
         min_worm_time = max(2.15 - level * 0.2, 0.5)
@@ -416,6 +429,7 @@ def main():
                             speed_boost_ending_time = time.time() + 10
                         elif type(catchable) == Extra_Lives:
                             lives_remaining += 1
+                            lives_remaining = min(lives_remaining, max_lives)
                 # For the BAD items
                 for avoidable in all_avoidables:
                     if pygame.sprite.collide_rect(player, avoidable):
@@ -455,6 +469,10 @@ def main():
                 screen.blit(entity.surf, entity.rect)
             screen.blit(player.surf, player.rect)
 
+            # Gray Overlay on Victory / Loss
+            if player_victory or player_loss:
+                screen.blit(overlay_surf, overlay_rect)
+
             # Draw Victory/Loss Message
             if player_victory and level == 10:
                 screen.blit(game_won_message, game_won_rect)
@@ -475,12 +493,31 @@ def main():
             apple_rect = apple_message.get_rect(topright=(time_rect.right, time_rect.bottom + 5))
             screen.blit(apple_message, apple_rect)
 
-            # Print Lives Remaining
-            lives_message = font.render('Lives: {}'.format(lives_remaining), True, (255, 255, 255))
-            lives_rect = lives_message.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
-            screen.blit(lives_message, lives_rect)
+            # Draw Red Hearts for Lives Remaining
+            if lives_remaining >= 1:
+                health_rect = red_health_img.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
+                screen.blit(red_health_img, health_rect)
+            i = 2
+            print(lives_remaining)
+            while i <= lives_remaining:
+                health_rect = red_health_img.get_rect(topright=(health_rect.left - 5, health_rect.top))
+                screen.blit(red_health_img, health_rect)
+                i += 1
 
-            if lives_remaining == 5:
+            # Draw Gray Hearts for Lives Lost
+            lives_lost = max_lives - lives_remaining
+            if lives_lost == 5:
+                gray_health_rect = gray_health_img.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
+                screen.blit(gray_health_img, gray_health_rect)
+            if lives_lost > 0 and lives_lost < 5:
+                gray_health_rect = gray_health_img.get_rect(topright=(health_rect.left - 5, health_rect.top))
+                screen.blit(gray_health_img, gray_health_rect)
+            i = 2
+            while i <= lives_lost:
+                gray_health_rect = red_health_img.get_rect(topright=(gray_health_rect.left - 5, gray_health_rect.top))
+                screen.blit(gray_health_img, gray_health_rect)
+                i += 1
+
 
             # Print Level
             level_message = font.render('Level {}'.format(level), True, (255, 255, 255))
