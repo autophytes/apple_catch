@@ -44,8 +44,10 @@ def main():
     pygame.mixer.music.load('sounds/music.wav')
     pygame.mixer.music.set_volume(.3)
     pygame.mixer.music.play(-1)
-    catch_apple = pygame.mixer.Sound('sounds/caught_apple.wav')
+    bite = pygame.mixer.Sound('sounds/bite.wav')
     good_sound = pygame.mixer.Sound('sounds/positive.wav')
+    # goldapple = pygame.mixer.Sound('sounds/gold_apple.wav')
+    negative_sound = pygame.mixer.Sound('sounds/negative.wav')
     
 
     # Initializing Text
@@ -432,10 +434,10 @@ def main():
                         catchable.kill()
                         catchable.rect.top = height + 100
                         if type(catchable) == Apple:
-                            pygame.mixer.Sound.play(catch_apple)
+                            pygame.mixer.Sound.play(bite)
                             apples_caught += 1
                         elif type(catchable) == Golden_Apple:
-                            pygame.mixer.Sound.play(good_sound)
+                            # pygame.mixer.Sound.play(goldapple)
                             apples_caught += 5
                         elif type(catchable) == Extra_Jump:
                             has_extra_jump = True
@@ -453,11 +455,13 @@ def main():
                         avoidable.kill()
                         avoidable.rect.top = height + 100
                         if type(avoidable) == Worm:
+                            pygame.mixer.Sound.play(negative_sound)
                             lives_remaining -= 1
                         elif type(avoidable) == Poison_Apple:
                             lives_remaining = 0
                             player_loss = True
                         elif type(avoidable) == Turtle:
+                            pygame.mixer.Sound.play(negative_sound)
                             has_turtle = True
                             has_speed_boost = False
                             turtle_ending_time = time.time() + 10
