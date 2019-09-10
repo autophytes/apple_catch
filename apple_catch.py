@@ -16,7 +16,8 @@ def main():
     starting_height = int(height - 58)
 
     # Variables
-    level = 1
+    level = 0
+    level_reset = 1
     max_lives = 5
     game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
     player_victory = False
@@ -35,7 +36,6 @@ def main():
     next_extra_lives_time = 0.0
     next_golden_apple = 0.0
 
-
     # Setting up the screen and clock
     pygame.init()
     screen = pygame.display.set_mode((width, height))
@@ -53,11 +53,12 @@ def main():
     pygame.mixer.music.set_volume(1)
     game_over = pygame.mixer.Sound('sounds/GameOver.wav')
     jumpy = pygame.mixer.Sound('sounds/jumpy.wav')
-    pygame.mixer.music.set_volume(.1)
+    jumpy.set_volume(0.7)
+    jumpy_louder = pygame.mixer.Sound('sounds/jumpy.wav')
+    jumpy_louder.set_volume(1)
     victory = pygame.mixer.Sound('sounds/victory.wav')
     level_up = pygame.mixer.Sound('sounds/level_up.wav')
     extra_life = pygame.mixer.Sound('sounds/1up.wav')
-
 
     # Initializing Text
     font = pygame.font.Font(None, 30)
@@ -87,11 +88,11 @@ def main():
     gray_health_img = pygame.image.load('images/grayheart.png')
     gray_health_img = pygame.transform.scale(gray_health_img, (25, 25)).convert_alpha()
 
-    # Load images into memory
+    # Load Background Image
     bg_image = pygame.image.load('images/background_cropped.png')
     bg_image = pygame.transform.scale(bg_image, (600, 600)).convert()
 
-    #class image index
+    #Load Class Images
     player_img = pygame.image.load('images/guy_with_basket.png')
     apple_img = pygame.image.load('images/goodapple.png')
     gold_apple_img = pygame.image.load('images/goldapple.png')
@@ -99,8 +100,9 @@ def main():
     bad_apple_img = pygame.image.load('images/badapple.png')
     extra_jump_img = pygame.image.load('images/extra_jump.png')
     speed_img = pygame.image.load('images/speed.png')
-    red_heart_img = pygame.image.load('images/redheart.png')
+    red_heart_img = pygame.image.load('images/purpleheart.png')
     slow_img = pygame.image.load('images/slow.png')
+
 
     # * * * * * * * * * * * * *
     # * * *    CLASSES    * * *
@@ -130,10 +132,10 @@ def main():
             elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
                 self.rect.move_ip(self.speed, 0)   
 
-            if self.rect.right > width-40:
-                self.rect.right = width-40
-            elif self.rect.left < 40:
-                self.rect.left = 40  
+            if self.rect.right > width - 15:
+                self.rect.right = width - 15
+            elif self.rect.left < 15:
+                self.rect.left = 15 
 
             # Extra Jump
             if has_extra_jump:
@@ -151,9 +153,13 @@ def main():
 
             # Calculate Jump
             if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
-                pygame.mixer.Sound.play(jumpy)
                 self.isJump = True   
             if self.isJump:
+                if self.velocity == self.velocity_reset and self.velocity_reset == 6:
+                    pygame.mixer.Sound.play(jumpy)
+                elif self.velocity == self.velocity_reset and self.velocity_reset == 9:
+                    pygame.mixer.Sound.play(jumpy_louder)
+    
                 self.force = self.momentum * self.velocity
 
                 self.rect.move_ip(0, -self.force)
@@ -229,7 +235,7 @@ def main():
 
             # Variables
             self.level = level
-            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
+            self.speed = int((random.random() * 2 + 1) * ( 1 + self.level / 5 ) )
 
             # Add to Group
             all_avoidables.add(self)
@@ -246,7 +252,7 @@ def main():
 
             # Variables
             self.level = level
-            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
+            self.speed = int((random.random() * 2 + 1) * ( 1 + self.level / 5 ) )
 
             # Add to Group
             all_avoidables.add(self)
@@ -302,7 +308,7 @@ def main():
 
             # Variables
             self.level = level
-            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
+            self.speed = int((random.random() * 2 + 1) * ( 1 + self.level / 5 ) )
 
             # Add to Group
             all_avoidables.add(self)
@@ -329,24 +335,31 @@ def main():
     def calc_next_apple_time():
         next_apple_time = time.time() + random.randint(0, 3)
         return next_apple_time
+    
     def calc_next_worm_time():
         next_worm_time = time.time() + random.random() * (max_worm_time - min_worm_time) + min_worm_time
         return next_worm_time
+    
     def calc_next_speed_boost():
         next_speed_boost = time.time() + random.randint(1, 20)
         return next_speed_boost
+    
     def calc_next_turtle_time():
-        next_turtle_time = time.time() + random.randint(1,20)
+        next_turtle_time = time.time() + random.randint(1,15)
         return next_turtle_time
+    
     def calc_next_extra_jump():
         next_extra_jump = time.time() + random.randint(1, 20)
         return next_extra_jump
+    
     def calc_next_poison_time():
         next_poison_time = time.time() + random.random() * (max_poison_time - min_poison_time) + min_poison_time
         return next_poison_time
+    
     def calc_next_extra_lives_time():
         next_extra_lives_time = time.time() + random.randint(1, 60)
         return next_extra_lives_time
+    
     def calc_next_golden_apple():
         next_golden_apple = time.time() + random.randint(1, 60)
         return next_golden_apple
@@ -365,7 +378,7 @@ def main():
         if player_victory and level < 10:
             level += 1
         else: # New Game
-            level = 1
+            level = level_reset
             lives_remaining = max_lives
 
         # Variable Resets
@@ -561,12 +574,12 @@ def main():
             # Calculate & Print Time Remaining
             if not player_victory and not player_loss:
                 time_remaining = max(int(end_time - time.time()), 0)
-            time_message = font.render('Time Remaining: {}'.format(time_remaining), True, (255, 255, 255))
+            time_message = font.render('Time Remaining: {}'.format(time_remaining), True, (0, 0, 0))
             time_rect = time_message.get_rect(topright=(width - 20, 20))
             screen.blit(time_message, time_rect)
             
             # Print Apples Caught
-            apple_message = font.render('Apples: {} / {}'.format(apples_caught, apples_needed), True, (255, 255, 255))
+            apple_message = font.render('Apples: {} / {}'.format(apples_caught, apples_needed), True, (0, 0, 0))
             apple_rect = apple_message.get_rect(topright=(time_rect.right, time_rect.bottom + 5))
             screen.blit(apple_message, apple_rect)
 
@@ -599,21 +612,21 @@ def main():
             top_left_messages = []
 
             # Creates the Current Level Message
-            level_message = font.render('Level {}'.format(level), True, (255, 255, 255))
+            level_message = font.render('Level {}'.format(level), True, (0, 0, 0))
             level_rect = level_message.get_rect(topleft=(20, 20))
             top_left_messages.append([level_message, level_rect])
 
             # Creates the Boost Messages
             if has_extra_jump:
-                extra_jump_message = font.render('Jump Boost: {}'.format(int(extra_jump_ending_time - time.time())), True, (255, 255, 255))
+                extra_jump_message = font.render('Jump Boost: {}'.format(int(extra_jump_ending_time - time.time())), True, (0, 0, 0))
                 extra_jump_rect = extra_jump_message.get_rect(topleft=(20, 20))
                 top_left_messages.append([extra_jump_message, extra_jump_rect])
             if has_speed_boost:
-                speed_boost_message = font.render('Speed Boost: {}'.format(int(speed_boost_ending_time - time.time())), True, (255, 255, 255))
+                speed_boost_message = font.render('Speed Boost: {}'.format(int(speed_boost_ending_time - time.time())), True, (0, 0, 0))
                 speed_boost_rect = speed_boost_message.get_rect(topleft=(20, 20))
                 top_left_messages.append([speed_boost_message, speed_boost_rect])
             if has_turtle:
-                turtle_message = font.render('Slow-mo: {}'.format(int(turtle_ending_time - time.time())), True, (255, 255, 255))
+                turtle_message = font.render('Slow-mo: {}'.format(int(turtle_ending_time - time.time())), True, (0, 0, 0))
                 turtle_rect = turtle_message.get_rect(topleft=(20, 20))
                 top_left_messages.append([turtle_message, turtle_rect])
             
