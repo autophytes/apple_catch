@@ -35,6 +35,7 @@ def main():
     next_poison_time = 0.0
     next_extra_lives_time = 0.0
     next_golden_apple = 0.0
+    next_boost_tick_sound = 0.0
 
     # Setting up the screen and clock
     pygame.init()
@@ -50,15 +51,19 @@ def main():
     good_sound = pygame.mixer.Sound('sounds/positive.wav')
     goldapple = pygame.mixer.Sound('sounds/gold_apple.wav')
     negative_sound = pygame.mixer.Sound('sounds/negative.wav')
-    pygame.mixer.music.set_volume(1)
     game_over = pygame.mixer.Sound('sounds/GameOver.wav')
+    game_over.set_volume(0.3)
     jumpy = pygame.mixer.Sound('sounds/jumpy.wav')
     jumpy.set_volume(0.7)
     jumpy_louder = pygame.mixer.Sound('sounds/jumpy.wav')
     jumpy_louder.set_volume(1)
     victory = pygame.mixer.Sound('sounds/victory.wav')
     level_up = pygame.mixer.Sound('sounds/level_up.wav')
+    level_up.set_volume(0.5)
     extra_life = pygame.mixer.Sound('sounds/1up.wav')
+    tick = pygame.mixer.Sound('sounds/clock_10_sec.wav')
+    tick_channel = pygame.mixer.Channel(0)
+    # tick_channel.queue(tick)
 
     # Initializing Text
     font = pygame.font.Font(None, 30)
@@ -388,6 +393,10 @@ def main():
         has_extra_jump = False
         has_speed_boost = False
         has_turtle = False
+        game_over_music_unplayed = True
+        victory_music_unplayed = True
+        level_up_music_unplayed = True
+        clock_tick_playing = False
         end_time = time.time() + game_length
         apples_caught = 0
         apples_needed = 10
@@ -526,7 +535,6 @@ def main():
                             pygame.mixer.Sound.play(negative_sound)
                             lives_remaining -= 1
                         elif type(avoidable) == Poison_Apple:
-                            pygame.mixer.Sound.play(game_over)
                             lives_remaining = 0
                             player_loss = True
                         elif type(avoidable) == Turtle:
@@ -540,10 +548,16 @@ def main():
                 player_victory = True
             elif time.time() > end_time:
                 player_loss = True
+                if game_over_music_unplayed:
+                    pygame.mixer.Sound.play(game_over)
+                    game_over_music_unplayed = False
 
             # LIVES: Win or Lose
             if lives_remaining <= 0:
                 player_loss = True
+                if game_over_music_unplayed:
+                    pygame.mixer.Sound.play(game_over)
+                    game_over_music_unplayed = False
 
             # * * * * * * * * * * * * * * * *
             # * * * DRAW OBJECTS / TEXT * * *
@@ -566,8 +580,14 @@ def main():
             # Draw Victory/Loss Message
             if player_victory and level == 10:
                 screen.blit(game_won_message, game_won_rect)
+                if victory_music_unplayed:
+                    pygame.mixer.Sound.play(victory)
+                    victory_music_unplayed = False
             elif player_victory:
                 screen.blit(victory_message, victory_rect)
+                if level_up_music_unplayed:
+                    pygame.mixer.Sound.play(level_up)
+                    level_up_music_unplayed = False
             elif player_loss:
                 screen.blit(loss_message, loss_rect)
             
@@ -635,6 +655,17 @@ def main():
                 if i != 0:
                     top_left_messages[i][1] = top_left_messages[i][0].get_rect(topleft=(top_left_messages[i-1][1].left, top_left_messages[i-1][1].bottom + 5))
                 screen.blit(top_left_messages[i][0], top_left_messages[i][1])
+
+            # Ticks if we've got Boost Messages
+            if (extra_jump_ending_time > time.time() + 1 and extra_jump_ending_time < time.time() + 3.5) or (speed_boost_ending_time > time.time() + 1 and speed_boost_ending_time < time.time() + 3.5) or (turtle_ending_time > time.time() + 1 and turtle_ending_time < time.time() + 3.5):
+                if not clock_tick_playing:
+                    # pygame.mixer.Sound.play(tick)
+                    tick_channel.play(tick)
+                    clock_tick_playing = True
+            elif clock_tick_playing:
+                print("Should stop playing")
+                tick_channel.stop()
+                clock_tick_playing = False
                 
 
             # Refresh Game Display
