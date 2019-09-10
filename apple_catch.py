@@ -4,13 +4,24 @@ import random
 import time
 
 def main():
-    # Variables
+    # * * * * * * * * * * * * *
+    # * * *  INITIALIZING  * * *
+    # * * * * * * * * * * * * *
+
+    # Constants
     width = 600
     height = 600
     blue_color = (97, 159, 182)
-    player_victory = False
     starting_width = int(width/2)
     starting_height = int(height - 50)
+
+    # Variables
+    level = 1
+    lives_remaining = 3
+    game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
+    has_extra_jump = False
+    has_speed_boost = False
+    player_victory = False
 
     # Time Counters
     next_apple_time = time.time()
@@ -22,13 +33,6 @@ def main():
     extra_jump_ending_time = 0
     speed_boost_ending_time = 0
 
-    # Interactive Variables
-    level = 1
-    lives_remaining = 3
-    game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
-    has_extra_jump = False
-    has_speed_boost = False
-
     # Setting up the screen and clock
     pygame.init()
     screen = pygame.display.set_mode((width, height))
@@ -39,17 +43,26 @@ def main():
     # --- Insert Code ---
 
     # Initializing Text
-    # --- Insert Code ---
     font = pygame.font.Font(None, 30)
     victory_message = font.render('Victory! Press ENTER to continue', True, (255, 255, 255))
     victory_rect = victory_message.get_rect(center=(int(width/2), int(height/2)))
     loss_message = font.render('You lost! To play again, press ENTER', True, (255, 255, 255))
     loss_rect = loss_message.get_rect(center=(int(width/2), int(height/2)))
 
+    # Create All Sprite Groups
+    all_catchables = pygame.sprite.Group()
+    all_avoidables = pygame.sprite.Group()
+    all_falling = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
 
 
-    # Object Classes
+
+    # * * * * * * * * * * * * *
+    # * * *    CLASSES    * * *
+    # * * * * * * * * * * * * *
+    
     class Player(pygame.sprite.Sprite):
+        # Initialize
         def __init__(self):
             super(Player, self).__init__()
             self.surf = pygame.Surface((30, 30))
@@ -64,18 +77,18 @@ def main():
             self.velocity_reset = 6
             self.velocity = self.velocity_reset
 
-        # --- Insert Code ---
-
+        # Update - Once per frame
         def update(self, pressed_keys, has_extra_jump, has_speed_boost):
+            # Movement
             if pressed_keys[K_LEFT] or pressed_keys[K_a]:         # West
                 self.rect.move_ip(-self.speed, 0)
             elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
                 self.rect.move_ip(self.speed, 0)   
 
-            if self.rect.right > width-50:
-                self.rect.right = width-50
-            elif self.rect.left < 50:
-                self.rect.left = 50  
+            if self.rect.right > width-40:
+                self.rect.right = width-40
+            elif self.rect.left < 40:
+                self.rect.left = 40  
 
             # Extra Jump
             if has_extra_jump:
@@ -92,7 +105,6 @@ def main():
             # Calculate Jump
             if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
                 self.isJump = True   
-
             if self.isJump:
                 self.force = self.momentum * self.velocity
 
@@ -106,13 +118,16 @@ def main():
                     self.velocity = self.velocity_reset
 
     class Falling_Object(pygame.sprite.Sprite):
-        # --- Insert Code ---
+        # Super class for falling objects
         def __init__(self):
             super(Falling_Object, self).__init__()
 
             self.starting_x = self.calculate_x()
             all_sprites.add(self)
             all_falling.add(self)
+
+            # Default speed
+            self.speed = random.randint(1, 3)
 
         # Every Frame, Update Position
         def update(self):
@@ -122,6 +137,7 @@ def main():
             if self.rect.top > height + 50:
                 self.kill()
 
+        # Calculates a random starting X value
         def calculate_x(self):
             return random.randint(50, width - 50)
 
@@ -134,25 +150,24 @@ def main():
             self.surf = pygame.Surface((20, 20))
             self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
-            self.speed = random.randint(1, 3)
-                # self.test = self.calculate_x()
-                # print("Starting x is {}".format(self.test))
                 
-            # Add to Groups
+            # Add to Group
             all_catchables.add(self)
 
     class Golden_Apple(Falling_Object):
         def __init__(self):
             super(Golden_Apple, self).__init__()
 
+            # Object surface properties
             self.surf = pygame.Surface((20, 20))
             self.surf.fill((212, 175, 55))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
-            self.speed = random.randint(1, 3)
 
+            # Add to Group
             all_catchables.add(self)
 
     class Worm(Falling_Object):
+        # Costs the player one life
         def __init__(self, level):
             super(Worm, self).__init__()
 
@@ -160,14 +175,12 @@ def main():
             self.surf = pygame.Surface((20, 20))
             self.surf.fill((0, 0, 0))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
-                # self.test = self.calculate_x()
-                # print("Starting x is {}".format(self.test))
+
+            # Variables
             self.level = level
-
             self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
-            print(self.speed)
 
-            # Add to Groups
+            # Add to Group
             all_avoidables.add(self)
 
     class Poison_Apple(Falling_Object):
@@ -180,38 +193,41 @@ def main():
             self.surf.fill((148, 178, 28))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
+            # Variables
             self.level = level
-            
             self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
 
-            # Add to Groups
+            # Add to Group
             all_avoidables.add(self)
 
     class Extra_Jump(Falling_Object):
-
-        # NOTE: I should change this to only show up in later levels
-
+        # Gives an X second boost to jump height
         def __init__(self):
             super(Extra_Jump, self).__init__()
 
+            # Object Surface Properties
             self.surf = pygame.Surface((20, 20))
             self.surf.fill((20, 20, 210))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
-            self.speed = random.randint(1, 3)
 
+            # Add to Group
             all_catchables.add(self)
 
     class Speed_Boost(Falling_Object):
+        # Gives an X second boost to walking speed
         def __init__(self):
             super(Speed_Boost, self).__init__()
 
+            # Object Surface Properties
             self.surf = pygame.Surface((20, 20))
             self.surf.fill((175, 55, 212))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            # Variables
             self.speed = random.randint(1, 3)
 
+            # Add to Groups
             all_catchables.add(self)
-
 
     class Booster(Falling_Object):
         # --- Insert Code ---
@@ -227,26 +243,22 @@ def main():
 
 
 
-    # *** MAIN GAME LOOP ***
+    # * * * * * * * * * * * * *
+    # * * *OUTER GAME LOOP* * *
+    # * * * * * * * * * * * * *
     
+    # OUTER LOOP - New Levels & New Games
     repeat_game = True
-    while repeat_game:      # This outer loop is to play again on a win/loss
-
-        # Groups
-        all_catchables = pygame.sprite.Group()
-        all_avoidables = pygame.sprite.Group()
-        all_falling = pygame.sprite.Group()
-        all_sprites = pygame.sprite.Group()
+    while repeat_game:
 
         # Level Increment
         if player_victory == True:
             level += 1
-        else:
+        else: # New Game
             level = 1
             lives_remaining = 3
 
         # Variable Resets
-        # --- Insert Code ---
         stop_game = False
         player_victory = False
         player_loss = False
@@ -260,43 +272,55 @@ def main():
         print(min_worm_time)
         print(max_worm_time)
 
-        # Create Our Player Object
+        # Create Our Player
         player = Player()
 
+        # * * * * * * * * * * * * * *
+        # * * * INNER GAME LOOP * * *
+        # * * * * * * * * * * * * * *
 
-        # Current Game Loop
+        # INNER LOOP - Current Game
         while not stop_game:
+            
+            # Event Handling
             for event in pygame.event.get():
-
-                # Event Handling
-                if event.type == pygame.QUIT:  # Pygame is closed
+                # Player Closed Pygame
+                if event.type == pygame.QUIT:
                     stop_game = True
                     repeat_game = False
-                elif event.type == KEYDOWN:  # Player hits ESC to quit
+                elif event.type == KEYDOWN:
+                    # Player Hit ESC to Quit
                     if event.key == K_ESCAPE:
                         stop_game = True
                         repeat_game = False
-                    if (player_victory == True or player_loss == True) and event.key == K_RETURN:  # Player wants to play again
+                    # Player Hit ENTER to Continue / Restart
+                    if (player_victory == True or player_loss == True) and event.key == K_RETURN:
                         for entity in all_sprites:
                             entity.kill()
                             stop_game = True
 
             # Create Falling Objects
+            #   APPLE
             if time.time() > next_apple_time:
                 Apple()
                 next_apple_time = time.time() + random.randint(0, 3)
+            #   WORM
             if time.time() > next_worm_time:
                 Worm(level)
                 next_worm_time = time.time() + random.random() * (max_worm_time - min_worm_time) + min_worm_time
+            #   POISON APPLE
             if time.time() > next_poison_time:
                 Poison_Apple(level)
                 next_poison_time = time.time() + random.random() * random.randint(10, 40)
+            #   GOLDEN APPLE
             if time.time() > next_golden_apple:
                 Golden_Apple()
                 next_golden_apple = time.time() + random.random() * random.randint(25, 55)
+            #   EXTRA JUMP
             if time.time() > next_extra_jump:
                 Extra_Jump()
                 next_extra_jump = time.time() + random.random() * random.randint(25, 55)
+            #   SPEED BOOST
             if time.time() > next_speed_boost:
                 Speed_Boost()
                 next_speed_boost = time.time() + random.random() * random.randint(25, 55)
@@ -305,20 +329,17 @@ def main():
             if has_extra_jump:
                 if time.time() > extra_jump_ending_time:
                     has_extra_jump = False
-
             if has_speed_boost:
                 if time.time() > speed_boost_ending_time:
                     has_speed_boost = False
             
 
-            # Update Objects
-            # --- Insert Code ---
+            # Update All Objects
             player.update(pygame.key.get_pressed(), has_extra_jump, has_speed_boost)
             for entity in all_falling:
                 entity.update()
 
             # Check for Collisions
-            # --- Insert Code ---
             if player_loss == False and player_victory == False:
                 # For the GOOD items
                 for catchable in all_catchables:
@@ -357,28 +378,24 @@ def main():
             if lives_remaining <= 0:
                 player_loss = True
 
+            # * * * * * * * * * * * * * * * *
+            # * * * DRAW OBJECTS / TEXT * * *
+            # * * * * * * * * * * * * * * * *
+
             # Draw Background
             screen.fill(blue_color)
             # *** THIS WILL BE CHANGED WITH THE IMAGES ***
-                # background = pygame.Surface(screen.get_size())
-                # background.fill(blue_color)
-                # screen.blit(background, (0, 0))
-                # bg_image = pygame.image.load('image location')
-
 
             # Draw All Objects
             for entity in all_falling:
                 screen.blit(entity.surf, entity.rect)
-            screen.blit(player.surf, player.rect)       # so the player is on top
+            screen.blit(player.surf, player.rect)
 
             # Draw Victory/Loss Message
             if player_victory:
                 screen.blit(victory_message, victory_rect)
             elif player_loss:
                 screen.blit(loss_message, loss_rect)
-
-
-            # Draw Text Overlay
             
             # Calculate & Print Time Remaining
             if not player_victory and not player_loss:
@@ -401,7 +418,6 @@ def main():
             level_message = font.render('Level {}'.format(level), True, (255, 255, 255))
             level_rect = level_message.get_rect(topleft=(20, 20))
             screen.blit(level_message, level_rect)
-
 
             # Refresh Game Display
             pygame.display.update()
