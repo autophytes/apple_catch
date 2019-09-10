@@ -4,20 +4,38 @@ import random
 import time
 
 def main():
-    # Variables
+    # * * * * * * * * * * * * *
+    # * * * INITIALIZING  * * *
+    # * * * * * * * * * * * * *
+
+    # Constants
     width = 600
     height = 600
     blue_color = (97, 159, 182)
-    player_victory = False
     starting_width = int(width/2)
-    starting_height = int(height - 50)
-    next_apple_time = time.time()
-    next_worm_time = time.time() + 5
+    starting_height = int(height - 58)
 
-    # Interactive Variables
+    # Variables
     level = 1
     lives_remaining = 3
     game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
+    has_extra_jump = False
+    has_speed_boost = False
+    has_turtle = False
+    player_victory = False
+
+    # Time Counters
+    next_apple_time = time.time()
+    next_worm_time = time.time() + 2
+    next_poison_time = time.time() + random.randint(10, 40)
+    next_golden_apple = time.time() + random.randint(25, 55) # make this much longer
+    next_extra_jump = time.time() + random.randint(25, 55)
+    next_speed_boost = time.time() + random.randint(1, 2) # make this much longer
+    next_extra_lives_time = time.time() + random.randint(2, 4)
+    next_turtle_time = time.time() + random.randint(5,10)
+    extra_jump_ending_time = 0
+    speed_boost_ending_time = 0
+    turtle_ending_time = 0
 
     # Setting up the screen and clock
     pygame.init()
@@ -29,21 +47,38 @@ def main():
     # --- Insert Code ---
 
     # Initializing Text
-    # --- Insert Code ---
     font = pygame.font.Font(None, 30)
-    victory_message = font.render('Victory! Press ENTER to continue', True, (255, 255, 255))
+    victory_message = font.render('Level Won! Press ENTER to continue', True, (255, 255, 255))
     victory_rect = victory_message.get_rect(center=(int(width/2), int(height/2)))
     loss_message = font.render('You lost! To play again, press ENTER', True, (255, 255, 255))
     loss_rect = loss_message.get_rect(center=(int(width/2), int(height/2)))
+    game_won_message = font.render('Congratulations! You Won! To play again, press ENTER', True, (255, 255, 255))
+    game_won_rect = game_won_message.get_rect(center=(int(width/2), int(height/2)))
 
+    # Create All Sprite Groups
+    all_catchables = pygame.sprite.Group()
+    all_avoidables = pygame.sprite.Group()
+    all_falling = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
 
+    # Load images into memory
+    bg_image = pygame.image.load('images/background_cropped.png')
+    bg_image = pygame.transform.scale(bg_image, (600, 600)).convert()
 
-    # Object Classes
+    #class image index
+    player_img = pygame.image.load('images/guy_with_basket.png')
+    apple_img = pygame.image.load('images/goodapple.png')
+
+    # * * * * * * * * * * * * *
+    # * * *    CLASSES    * * *
+    # * * * * * * * * * * * * *
+    
     class Player(pygame.sprite.Sprite):
+        # Initialize
         def __init__(self):
             super(Player, self).__init__()
-            self.surf = pygame.Surface((30, 30))
-            self.surf.fill((255, 255, 255))
+            self.surf = pygame.transform.scale(player_img, (100, 100))
+            # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(starting_width, starting_height))
             self.speed = 5
             all_sprites.add(self)
@@ -54,22 +89,36 @@ def main():
             self.velocity_reset = 6
             self.velocity = self.velocity_reset
 
-        # --- Insert Code ---
-
-        def update(self, pressed_keys):
+        # Update - Once per frame
+        def update(self, pressed_keys, has_extra_jump, has_speed_boost):
+            # Movement
             if pressed_keys[K_LEFT] or pressed_keys[K_a]:         # West
                 self.rect.move_ip(-self.speed, 0)
             elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
                 self.rect.move_ip(self.speed, 0)   
 
-            if self.rect.right > width-50:
-                self.rect.right = width-50
-            elif self.rect.left < 50:
-                self.rect.left = 50
+            if self.rect.right > width-40:
+                self.rect.right = width-40
+            elif self.rect.left < 40:
+                self.rect.left = 40  
 
+            # Extra Jump
+            if has_extra_jump:
+                self.velocity_reset = 9
+            else:
+                self.velocity_reset = 6
+
+            # Turtle / Speed Boost
+            if has_turtle:
+                self.speed = 3
+            elif has_speed_boost:
+                self.speed = 9
+            else:
+                self.speed = 5
+
+            # Calculate Jump
             if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
-                self.isJump = True        
-
+                self.isJump = True   
             if self.isJump:
                 self.force = self.momentum * self.velocity
 
@@ -81,15 +130,20 @@ def main():
                     self.rect.bottom = starting_height + 15
                     self.isJump = False
                     self.velocity = self.velocity_reset
+            print(has_turtle)
+            print(self.speed)
 
     class Falling_Object(pygame.sprite.Sprite):
-        # --- Insert Code ---
+        # Super class for falling objects
         def __init__(self):
             super(Falling_Object, self).__init__()
 
             self.starting_x = self.calculate_x()
             all_sprites.add(self)
             all_falling.add(self)
+
+            # Default speed
+            self.speed = random.randint(1, 3)
 
         # Every Frame, Update Position
         def update(self):
@@ -99,34 +153,37 @@ def main():
             if self.rect.top > height + 50:
                 self.kill()
 
+        # Calculates a random starting X value
         def calculate_x(self):
             return random.randint(50, width - 50)
 
-    class Apple(Falling_Object):  # NOTE: switch to Falling_Object eventually
-        # --- Insert Code ---
-        #  Ideas:
-        #  -  Golden apple is an instant X apples collected
-
-
+    class Apple(Falling_Object):
         # NOTE: Perhaps add level as an argument and use that to adjust variables
         def __init__(self):
             super(Apple, self).__init__()
             
             # Object Surface Properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((255, 255, 255))
+            self.surf = pygame.transform.scale(apple_img, (100, 100))
+            # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
-            self.speed = random.randint(1, 3)
-                # self.test = self.calculate_x()
-                # print("Starting x is {}".format(self.test))
                 
-            # Add to Groups
+            # Add to Group
+            all_catchables.add(self)
+
+    class Golden_Apple(Falling_Object):
+        def __init__(self):
+            super(Golden_Apple, self).__init__()
+
+            # Object surface properties
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((212, 175, 55))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            # Add to Group
             all_catchables.add(self)
 
     class Worm(Falling_Object):
-        #  Ideas
-        #  -  Potentially adding a squirrel/raccoon that is an instant loss rather than just -1 life
-
+        # Costs the player one life
         def __init__(self, level):
             super(Worm, self).__init__()
 
@@ -134,61 +191,118 @@ def main():
             self.surf = pygame.Surface((20, 20))
             self.surf.fill((0, 0, 0))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
-                # self.test = self.calculate_x()
-                # print("Starting x is {}".format(self.test))
+
+            # Variables
             self.level = level
-
             self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
-            print(self.speed)
 
-            # Add to Groups
+            # Add to Group
             all_avoidables.add(self)
 
     class Poison_Apple(Falling_Object):
-        # This will be an instant game over if the person catches it
+        # An instant game over
+        def __init__(self, level):
+            super(Poison_Apple, self).__init__()
 
-        # def __init__(self, level):
-        #     super(Poison_Apple), 
-        pass
+            # Object Surface Properties
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((148, 178, 28))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
+            # Variables
+            self.level = level
+            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
 
+            # Add to Group
+            all_avoidables.add(self)
+
+    class Extra_Jump(Falling_Object):
+        # Gives an X second boost to jump height
+        def __init__(self):
+            super(Extra_Jump, self).__init__()
+
+            # Object Surface Properties
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((20, 20, 210))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            # Add to Group
+            all_catchables.add(self)
+
+    class Speed_Boost(Falling_Object):
+        # Gives an X second boost to walking speed
+        def __init__(self):
+            super(Speed_Boost, self).__init__()
+
+            # Object Surface Properties
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((175, 55, 212))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            # Variables
+            self.speed = random.randint(1, 3)
+
+            # Add to Groups
+            all_catchables.add(self)
+
+    class Extra_Lives(Falling_Object):
+        def __init__(self):
+            super(Extra_Lives, self).__init__()
+
+            self.surf = pygame.Surface((10, 10))
+            self.surf.fill((240, 180, 240))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            all_catchables.add(self)
+
+    class Turtle(Falling_Object):
+        # Slows the player for X seconds
+        def __init__(self, level):
+            super(Turtle, self).__init__()
+
+            # Object Surface Properties
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((240, 94, 35))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            # Variables
+            self.level = level
+            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
+
+            # Add to Group
+            all_avoidables.add(self)
 
     class Booster(Falling_Object):
         # --- Insert Code ---
         # Should booster item types be a sub class, or just have different functions within this class?
         #  -  Extra Life
-        #  -  Jump Higher
         #  -  Speed Boost
         #  -  Reduced Worms 
         #  -  Increased Apples / Apple Speed
         #  -  Invincibility
         #  -  Increased catch width
         #  -  Slow down time
+        #  -  Bigger and Immune
         pass
 
 
 
-
-    # *** MAIN GAME LOOP ***
+    # * * * * * * * * * * * * * *
+    # * * * OUTER GAME LOOP * * *
+    # * * * * * * * * * * * * * *
     
+    # OUTER LOOP - New Levels & New Games
     repeat_game = True
-    while repeat_game:      # This outer loop is to play again on a win/loss
-
-        # Groups
-        all_catchables = pygame.sprite.Group()
-        all_avoidables = pygame.sprite.Group()
-        all_falling = pygame.sprite.Group()
-        all_sprites = pygame.sprite.Group()
+    while repeat_game:
 
         # Level Increment
-        if player_victory == True:
+        if player_victory and level < 10:
             level += 1
-        else:
+        else: # New Game
             level = 1
             lives_remaining = 3
 
         # Variable Resets
-        # --- Insert Code ---
         stop_game = False
         player_victory = False
         player_loss = False
@@ -197,59 +311,125 @@ def main():
         apples_needed = 10  # NOTE: change this to level based
 
         # Worm Time - Toggles based on level. NOTE: need to fine tune. Probably reduce time. Exponential?
-        min_worm_time = max(3.25 - level * 0.25, 0.5)
-        max_worm_time = max(6.5 - level * 0.5, 1)
+        min_worm_time = max(2.15 - level * 0.2, 0.5)
+        max_worm_time = max(4.9 - level * 0.4, 1)
         print(min_worm_time)
         print(max_worm_time)
 
-        # Create Our Player Object
+        # Create Our Player
         player = Player()
 
 
-        # Current Game Loop
-        while not stop_game:
-            for event in pygame.event.get():
 
-                # Event Handling
-                if event.type == pygame.QUIT:  # Pygame is closed
+        # * * * * * * * * * * * * * *
+        # * * * INNER GAME LOOP * * *
+        # * * * * * * * * * * * * * *
+
+        # INNER LOOP - Current Game
+        while not stop_game:
+            
+            # Event Handling
+            for event in pygame.event.get():
+                # Player Closed Pygame
+                if event.type == pygame.QUIT:
                     stop_game = True
                     repeat_game = False
-                elif event.type == KEYDOWN:  # Player hits ESC to quit
+                elif event.type == KEYDOWN:
+                    # Player Hit ESC to Quit
                     if event.key == K_ESCAPE:
                         stop_game = True
                         repeat_game = False
-                    if (player_victory == True or player_loss == True) and event.key == K_RETURN:  # Player wants to play again
+                    # Player Hit ENTER to Continue / Restart
+                    if (player_victory == True or player_loss == True) and event.key == K_RETURN:
                         for entity in all_sprites:
                             entity.kill()
                             stop_game = True
 
             # Create Falling Objects
+            #   APPLE
             if time.time() > next_apple_time:
-                apple = Apple()
-                next_apple_time = time.time() + random.randint(1, 3)
+                Apple()
+                next_apple_time = time.time() + random.randint(0, 3)
+            #   WORM
             if time.time() > next_worm_time:
-                worm = Worm(level)
+                Worm(level)
                 next_worm_time = time.time() + random.random() * (max_worm_time - min_worm_time) + min_worm_time
+            #   POISON APPLE
+            if time.time() > next_poison_time:
+                Poison_Apple(level)
+                next_poison_time = time.time() + random.random() * random.randint(10, 40)
+            #   GOLDEN APPLE
+            if time.time() > next_golden_apple:
+                Golden_Apple()
+                next_golden_apple = time.time() + random.random() * random.randint(25, 55)
+            #   EXTRA JUMP
+            if time.time() > next_extra_jump:
+                Extra_Jump()
+                next_extra_jump = time.time() + random.random() * random.randint(25, 55)
+            #   SPEED BOOST
+            if time.time() > next_speed_boost:
+                Speed_Boost()
+                next_speed_boost = time.time() + random.random() * random.randint(25, 55)
+            #   EXTRA LIVES
+            if time.time() > next_extra_lives_time:
+                Extra_Lives()
+                next_extra_lives_time = time.time() + random.randint(2, 4)
+            #   TURTLE
+            if time.time() > next_turtle_time:
+                Turtle(level)
+                next_turtle_time = time.time() + random.randint(5,10)
 
-            # Update Objects
-            # --- Insert Code ---
-            player.update(pygame.key.get_pressed())
+            # Checks and removes status effects
+            if has_extra_jump:
+                if time.time() > extra_jump_ending_time:
+                    has_extra_jump = False
+            if has_speed_boost:
+                if time.time() > speed_boost_ending_time:
+                    has_speed_boost = False
+            if has_turtle:
+                if time.time() > turtle_ending_time:
+                    has_turtle = False
+            
+
+            # Update All Objects
+            player.update(pygame.key.get_pressed(), has_extra_jump, has_speed_boost)
             for entity in all_falling:
                 entity.update()
 
             # Check for Collisions
-            # --- Insert Code ---
             if player_loss == False and player_victory == False:
+                # For the GOOD items
                 for catchable in all_catchables:
                     if pygame.sprite.collide_rect(player, catchable):
                         catchable.kill()
                         catchable.rect.top = height + 100
-                        apples_caught += 1
+                        if type(catchable) == Apple:
+                            apples_caught += 1
+                        elif type(catchable) == Golden_Apple:
+                            apples_caught += 5
+                        elif type(catchable) == Extra_Jump:
+                            has_extra_jump = True
+                            extra_jump_ending_time = time.time() + 10
+                        elif type(catchable) == Speed_Boost:
+                            has_speed_boost = True
+                            has_turtle = False
+                            speed_boost_ending_time = time.time() + 10
+                        elif type(catchable) == Extra_Lives:
+                            lives_remaining += 1
+                # For the BAD items
                 for avoidable in all_avoidables:
                     if pygame.sprite.collide_rect(player, avoidable):
                         avoidable.kill()
                         avoidable.rect.top = height + 100
-                        lives_remaining -= 1
+                        if type(avoidable) == Worm:
+                            lives_remaining -= 1
+                        elif type(avoidable) == Poison_Apple:
+                            lives_remaining = 0
+                            player_loss = True
+                        elif type(avoidable) == Turtle:
+                            has_turtle = True
+                            has_speed_boost = False
+                            turtle_ending_time = time.time() + 10
 
             # TIME UP: Win or Lose
             if apples_caught >= apples_needed:
@@ -261,29 +441,27 @@ def main():
             if lives_remaining <= 0:
                 player_loss = True
 
+            # * * * * * * * * * * * * * * * *
+            # * * * DRAW OBJECTS / TEXT * * *
+            # * * * * * * * * * * * * * * * *
+
             # Draw Background
             screen.fill(blue_color)
             # *** THIS WILL BE CHANGED WITH THE IMAGES ***
-                # background = pygame.Surface(screen.get_size())
-                # background.fill(blue_color)
-                # screen.blit(background, (0, 0))
-                # bg_image = pygame.image.load('image location')
-
+            screen.blit(bg_image, (0, 0))
 
             # Draw All Objects
             for entity in all_falling:
                 screen.blit(entity.surf, entity.rect)
-            # Done separate to ensure the player is drawn on top. If we want the player behind the falling objects, change the for loop to all_entities
             screen.blit(player.surf, player.rect)
 
             # Draw Victory/Loss Message
-            if player_victory:
+            if player_victory and level == 10:
+                screen.blit(game_won_message, game_won_rect)
+            elif player_victory:
                 screen.blit(victory_message, victory_rect)
             elif player_loss:
                 screen.blit(loss_message, loss_rect)
-
-
-            # Draw Text Overlay
             
             # Calculate & Print Time Remaining
             if not player_victory and not player_loss:
@@ -302,15 +480,17 @@ def main():
             lives_rect = lives_message.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
             screen.blit(lives_message, lives_rect)
 
+            if lives_remaining == 5:
+
             # Print Level
             level_message = font.render('Level {}'.format(level), True, (255, 255, 255))
             level_rect = level_message.get_rect(topleft=(20, 20))
             screen.blit(level_message, level_rect)
 
-
             # Refresh Game Display
             pygame.display.update()
             clock.tick(60)
+            print(clock.get_fps())
 
     pygame.quit()
 
