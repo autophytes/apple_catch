@@ -13,7 +13,7 @@ def main():
     height = 600
     blue_color = (97, 159, 182)
     starting_width = int(width/2)
-    starting_height = int(height - 50)
+    starting_height = int(height - 58)
 
     # Variables
     level = 1
@@ -61,7 +61,9 @@ def main():
     bg_image = pygame.image.load('images/background_cropped.png')
     bg_image = pygame.transform.scale(bg_image, (600, 600)).convert()
 
-
+    #class image index
+    player_img = pygame.image.load('images/guy_with_basket.png')
+    apple_img = pygame.image.load('images/goodapple.png')
 
     # * * * * * * * * * * * * *
     # * * *    CLASSES    * * *
@@ -71,8 +73,8 @@ def main():
         # Initialize
         def __init__(self):
             super(Player, self).__init__()
-            self.surf = pygame.Surface((30, 30))
-            self.surf.fill((255, 255, 255))
+            self.surf = pygame.transform.scale(player_img, (100, 100))
+            # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(starting_width, starting_height))
             self.speed = 5
             all_sprites.add(self)
@@ -153,8 +155,8 @@ def main():
             super(Apple, self).__init__()
             
             # Object Surface Properties
-            self.surf = pygame.Surface((20, 20))
-            self.surf.fill((255, 255, 255))
+            self.surf = pygame.transform.scale(apple_img, (100, 100))
+            # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
                 
             # Add to Group
