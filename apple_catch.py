@@ -50,9 +50,13 @@ def main():
     good_sound = pygame.mixer.Sound('sounds/positive.wav')
     goldapple = pygame.mixer.Sound('sounds/gold_apple.wav')
     negative_sound = pygame.mixer.Sound('sounds/negative.wav')
+    pygame.mixer.music.set_volume(1)
     game_over = pygame.mixer.Sound('sounds/GameOver.wav')
     jumpy = pygame.mixer.Sound('sounds/jumpy.wav')
+    pygame.mixer.music.set_volume(.1)
     victory = pygame.mixer.Sound('sounds/victory.wav')
+    level_up = pygame.mixer.Sound('sounds/level_up.wav')
+    extra_life = pygame.mixer.Sound('sounds/1up.wav')
 
 
     # Initializing Text
@@ -488,13 +492,16 @@ def main():
                             pygame.mixer.Sound.play(goldapple)
                             apples_caught += 5
                         elif type(catchable) == Extra_Jump:
+                            pygame.mixer.Sound.play(good_sound)
                             has_extra_jump = True
                             extra_jump_ending_time = time.time() + 10
                         elif type(catchable) == Speed_Boost:
+                            pygame.mixer.Sound.play(good_sound)
                             has_speed_boost = True
                             has_turtle = False
                             speed_boost_ending_time = time.time() + 10
                         elif type(catchable) == Extra_Lives:
+                            pygame.mixer.Sound.play(extra_life)
                             lives_remaining += 1
                             lives_remaining = min(lives_remaining, max_lives)
                 # For the BAD items
@@ -545,11 +552,6 @@ def main():
 
             # Draw Victory/Loss Message
             if player_victory and level == 10:
-                pygame.mixer.Sound.load(victory)
-                pygame.mixer.music.stop(0)
-                pygame.mixer.music.load('sounds/music.wav')
-                pygame.mixer.music.set_volume(.3)
-                pygame.mixer.music.play(-1)
                 screen.blit(game_won_message, game_won_rect)
             elif player_victory:
                 screen.blit(victory_message, victory_rect)
