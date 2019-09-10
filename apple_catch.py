@@ -46,7 +46,7 @@ def main():
     pygame.mixer.music.play(-1)
     bite = pygame.mixer.Sound('sounds/bite.wav')
     good_sound = pygame.mixer.Sound('sounds/positive.wav')
-    # goldapple = pygame.mixer.Sound('sounds/gold_apple.wav')
+    goldapple = pygame.mixer.Sound('sounds/gold_apple.wav')
     negative_sound = pygame.mixer.Sound('sounds/negative.wav')
     
 
@@ -437,7 +437,7 @@ def main():
                             pygame.mixer.Sound.play(bite)
                             apples_caught += 1
                         elif type(catchable) == Golden_Apple:
-                            # pygame.mixer.Sound.play(goldapple)
+                            pygame.mixer.Sound.play(goldapple)
                             apples_caught += 5
                         elif type(catchable) == Extra_Jump:
                             has_extra_jump = True
