@@ -528,10 +528,35 @@ def main():
                 screen.blit(gray_health_img, gray_health_rect)
                 i += 1
 
-            # Print Level
+
+            # TOP LEFT MESSAGES
+            top_left_messages = []
+
+            # Creates the Current Level Message
             level_message = font.render('Level {}'.format(level), True, (255, 255, 255))
             level_rect = level_message.get_rect(topleft=(20, 20))
-            screen.blit(level_message, level_rect)
+            top_left_messages.append([level_message, level_rect])
+
+            # Creates the Boost Messages
+            if has_extra_jump:
+                extra_jump_message = font.render('Jump Boost: {}'.format(int(extra_jump_ending_time - time.time())), True, (255, 255, 255))
+                extra_jump_rect = extra_jump_message.get_rect(topleft=(20, 20))
+                top_left_messages.append([extra_jump_message, extra_jump_rect])
+            if has_speed_boost:
+                speed_boost_message = font.render('Speed Boost: {}'.format(int(speed_boost_ending_time - time.time())), True, (255, 255, 255))
+                speed_boost_rect = speed_boost_message.get_rect(topleft=(20, 20))
+                top_left_messages.append([speed_boost_message, speed_boost_rect])
+            if has_turtle:
+                turtle_message = font.render('Slow-mo: {}'.format(int(turtle_ending_time - time.time())), True, (255, 255, 255))
+                turtle_rect = turtle_message.get_rect(topleft=(20, 20))
+                top_left_messages.append([turtle_message, turtle_rect])
+            
+            # Prints All Messages in Top Left Corner
+            for i in range(len(top_left_messages)):
+                if i != 0:
+                    top_left_messages[i][1] = top_left_messages[i][0].get_rect(topleft=(top_left_messages[i-1][1].left, top_left_messages[i-1][1].bottom + 5))
+                screen.blit(top_left_messages[i][0], top_left_messages[i][1])
+                
 
             # Refresh Game Display
             pygame.display.update()
