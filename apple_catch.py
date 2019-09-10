@@ -40,8 +40,13 @@ def main():
     pygame.display.set_caption('Apple Catch')
     clock = pygame.time.Clock()
 
-    # Initialize Sounds NOTE: Find and set up sounds.
-    # --- Insert Code ---
+    # Initialize Sounds
+    pygame.mixer.music.load('sounds/music.wav')
+    pygame.mixer.music.set_volume(.3)
+    pygame.mixer.music.play(-1)
+    catch_apple = pygame.mixer.Sound('sounds/caught_apple.wav')
+    good_sound = pygame.mixer.Sound('sounds/positive.wav')
+    
 
     # Initializing Text
     font = pygame.font.Font(None, 30)
@@ -427,8 +432,10 @@ def main():
                         catchable.kill()
                         catchable.rect.top = height + 100
                         if type(catchable) == Apple:
+                            pygame.mixer.Sound.play(catch_apple)
                             apples_caught += 1
                         elif type(catchable) == Golden_Apple:
+                            pygame.mixer.Sound.play(good_sound)
                             apples_caught += 5
                         elif type(catchable) == Extra_Jump:
                             has_extra_jump = True
