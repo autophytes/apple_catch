@@ -22,17 +22,19 @@ def main():
     player_victory = False
 
     # Time Counters
-    next_apple_time = time.time()
-    next_worm_time = time.time() + 2
-    next_poison_time = time.time() + random.randint(10, 40)
-    next_golden_apple = time.time() + random.randint(1, 2) # make this much longer
-    next_extra_jump = time.time() + random.randint(1, 2)
-    next_speed_boost = time.time() + random.randint(1, 2) # make this much longer
-    next_extra_lives_time = time.time() + random.randint(2, 4)
-    next_turtle_time = time.time() + random.randint(5,10)
     extra_jump_ending_time = 0
     speed_boost_ending_time = 0
     turtle_ending_time = 0
+
+    next_apple_time = 0.0
+    next_worm_time = 0.0
+    next_speed_boost = 0.0
+    next_turtle_time = 0.0
+    next_extra_jump = 0.0
+    next_poison_time = 0.0
+    next_extra_lives_time = 0.0
+    next_golden_apple = 0.0
+
 
     # Setting up the screen and clock
     pygame.init()
@@ -148,12 +150,10 @@ def main():
 
                 self.velocity -= .4
 
-                if self.rect.bottom >= starting_height + 15:
-                    self.rect.bottom = starting_height + 15
+                if self.rect.bottom >= starting_height + 37:
+                    self.rect.bottom = starting_height + 37
                     self.isJump = False
                     self.velocity = self.velocity_reset
-            print(has_turtle)
-            print(self.speed)
 
     class Falling_Object(pygame.sprite.Sprite):
         # Super class for falling objects
@@ -311,6 +311,37 @@ def main():
         pass
 
 
+    # * * * * * * * * * * * * * *
+    # * * *    FUNCTIONS    * * *
+    # * * * * * * * * * * * * * *
+
+    # Next Falling Object Functions
+    def calc_next_apple_time():
+        next_apple_time = time.time() + random.randint(0, 3)
+        return next_apple_time
+    def calc_next_worm_time():
+        next_worm_time = time.time() + random.random() * (max_worm_time - min_worm_time) + min_worm_time
+        return next_worm_time
+    def calc_next_speed_boost():
+        next_speed_boost = time.time() + random.randint(1, 20)
+        return next_speed_boost
+    def calc_next_turtle_time():
+        next_turtle_time = time.time() + random.randint(1,20)
+        return next_turtle_time
+    def calc_next_extra_jump():
+        next_extra_jump = time.time() + random.randint(1, 20)
+        return next_extra_jump
+    def calc_next_poison_time():
+        next_poison_time = time.time() + random.random() * (max_poison_time - min_poison_time) + min_poison_time
+        return next_poison_time
+    def calc_next_extra_lives_time():
+        next_extra_lives_time = time.time() + random.randint(1, 60)
+        return next_extra_lives_time
+    def calc_next_golden_apple():
+        next_golden_apple = time.time() + random.randint(1, 60)
+        return next_golden_apple
+
+
 
     # * * * * * * * * * * * * * *
     # * * * OUTER GAME LOOP * * *
@@ -338,11 +369,21 @@ def main():
         apples_caught = 0
         apples_needed = 10
 
-        # Worm Time - Toggles based on level. NOTE: need to fine tune. Probably reduce time. Exponential?
-        min_worm_time = max(2.15 - level * 0.2, 0.5)
-        max_worm_time = max(4.9 - level * 0.4, 1)
-        print(min_worm_time)
-        print(max_worm_time)
+        # Worm Time - Toggles based on level
+        min_worm_time = 2.25 - level * 0.2
+        max_worm_time = 5.0 - level * 0.4
+        min_poison_time = 12 - level * 1   # (Level 10: 2) (Level 4: 8)
+        max_poison_time = 30 - level * 2.5     # (Level 10: 5) (Level 4: 20)
+
+        # Generate Time Variables
+        next_apple_time = time.time()           # Start every level with an apple
+        next_worm_time = time.time() + 2        # Start every level with a worm after 2 seconds
+        calc_next_speed_boost()
+        calc_next_turtle_time()
+        calc_next_extra_jump()
+        calc_next_poison_time()
+        calc_next_extra_lives_time()
+        calc_next_golden_apple()
 
         # Create Our Player
         player = Player()
@@ -355,7 +396,7 @@ def main():
 
         # INNER LOOP - Current Game
         while not stop_game:
-            
+
             # Event Handling
             for event in pygame.event.get():
                 # Player Closed Pygame
@@ -374,38 +415,42 @@ def main():
                             stop_game = True
 
             # Create Falling Objects
-            #   APPLE
+            #   APPLE - Level 1
             if time.time() > next_apple_time:
                 Apple()
-                next_apple_time = time.time() + random.randint(0, 3)
-            #   WORM
+                next_apple_time = calc_next_apple_time()
+            #   WORM - Level 1
             if time.time() > next_worm_time:
                 Worm(level)
-                next_worm_time = time.time() + random.random() * (max_worm_time - min_worm_time) + min_worm_time
-            #   POISON APPLE
-            if time.time() > next_poison_time:
-                Poison_Apple(level)
-                next_poison_time = time.time() + random.random() * random.randint(10, 40)
-            #   GOLDEN APPLE
-            if time.time() > next_golden_apple:
-                Golden_Apple()
-                next_golden_apple = time.time() + random.random() * random.randint(25, 55)
-            #   EXTRA JUMP
-            if time.time() > next_extra_jump:
-                Extra_Jump()
-                next_extra_jump = time.time() + random.random() * random.randint(25, 55)
-            #   SPEED BOOST
-            if time.time() > next_speed_boost:
-                Speed_Boost()
-                next_speed_boost = time.time() + random.random() * random.randint(25, 55)
-            #   EXTRA LIVES
-            if time.time() > next_extra_lives_time:
-                Extra_Lives()
-                next_extra_lives_time = time.time() + random.randint(2, 4)
-            #   TURTLE
-            if time.time() > next_turtle_time:
-                Turtle(level)
-                next_turtle_time = time.time() + random.randint(5,10)
+                next_worm_time = calc_next_worm_time()
+            if level >= 2:
+                #   SPEED BOOST - Level 2
+                if time.time() > next_speed_boost:
+                    Speed_Boost()
+                    next_speed_boost = calc_next_speed_boost()
+                #   TURTLE - Level 2
+                if time.time() > next_turtle_time:
+                    Turtle(level)
+                    next_turtle_time = calc_next_turtle_time()
+            if level >= 3:
+                #   EXTRA JUMP - Level 3
+                if time.time() > next_extra_jump:
+                    Extra_Jump()
+                    next_extra_jump = calc_next_extra_jump()
+            if level >= 4:
+                #   POISON APPLE - Level 4
+                if time.time() > next_poison_time:
+                    Poison_Apple(level)
+                    next_poison_time = calc_next_poison_time()
+            if level >= 5:
+                #   EXTRA LIVES - Level 5
+                if time.time() > next_extra_lives_time:
+                    Extra_Lives()
+                    next_extra_lives_time = calc_next_extra_lives_time()
+                #   GOLDEN APPLE - Level 5
+                if time.time() > next_golden_apple:
+                    Golden_Apple()
+                    next_golden_apple = calc_next_golden_apple()
 
             # Checks and removes status effects
             if has_extra_jump:
@@ -417,7 +462,6 @@ def main():
             if has_turtle:
                 if time.time() > turtle_ending_time:
                     has_turtle = False
-            
 
             # Update All Objects
             player.update(pygame.key.get_pressed(), has_extra_jump, has_speed_boost)
@@ -515,7 +559,6 @@ def main():
                 health_rect = red_health_img.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
                 screen.blit(red_health_img, health_rect)
             i = 2
-            print(lives_remaining)
             while i <= lives_remaining:
                 health_rect = red_health_img.get_rect(topright=(health_rect.left - 5, health_rect.top))
                 screen.blit(red_health_img, health_rect)
@@ -567,8 +610,7 @@ def main():
 
             # Refresh Game Display
             pygame.display.update()
-            # clock.tick(60)
-            print(clock.get_fps())
+            clock.tick(60)
 
     pygame.quit()
 
