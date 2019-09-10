@@ -21,6 +21,7 @@ def main():
     game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
     has_extra_jump = False
     has_speed_boost = False
+    has_turtle = False
     player_victory = False
 
     # Time Counters
@@ -29,9 +30,12 @@ def main():
     next_poison_time = time.time() + random.randint(10, 40)
     next_golden_apple = time.time() + random.randint(25, 55) # make this much longer
     next_extra_jump = time.time() + random.randint(25, 55)
-    next_speed_boost = time.time() + random.randint(1, 2)
+    next_speed_boost = time.time() + random.randint(1, 2) # make this much longer
+    next_extra_lives_time = time.time() + random.randint(2, 4)
+    next_turtle_time = time.time() + random.randint(5,10)
     extra_jump_ending_time = 0
     speed_boost_ending_time = 0
+    turtle_ending_time = 0
 
     # Setting up the screen and clock
     pygame.init()
@@ -102,8 +106,10 @@ def main():
             else:
                 self.velocity_reset = 6
 
-            # Speed Boost
-            if has_speed_boost:
+            # Turtle / Speed Boost
+            if has_turtle:
+                self.speed = 3
+            elif has_speed_boost:
                 self.speed = 9
             else:
                 self.speed = 5
@@ -122,6 +128,8 @@ def main():
                     self.rect.bottom = starting_height + 15
                     self.isJump = False
                     self.velocity = self.velocity_reset
+            print(has_turtle)
+            print(self.speed)
 
     class Falling_Object(pygame.sprite.Sprite):
         # Super class for falling objects
@@ -235,6 +243,33 @@ def main():
             # Add to Groups
             all_catchables.add(self)
 
+    class Extra_Lives(Falling_Object):
+        def __init__(self):
+            super(Extra_Lives, self).__init__()
+
+            self.surf = pygame.Surface((10, 10))
+            self.surf.fill((240, 180, 240))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            all_catchables.add(self)
+
+    class Turtle(Falling_Object):
+        # Slows the player for X seconds
+        def __init__(self, level):
+            super(Turtle, self).__init__()
+
+            # Object Surface Properties
+            self.surf = pygame.Surface((20, 20))
+            self.surf.fill((240, 94, 35))
+            self.rect = self.surf.get_rect(center=(self.starting_x, -50))
+
+            # Variables
+            self.level = level
+            self.speed = int(random.randint(1, 3) * ( 1 + self.level / 5 ) ) #NOTE: Need to convert this to just Random() like the other one
+
+            # Add to Group
+            all_avoidables.add(self)
+
     class Booster(Falling_Object):
         # --- Insert Code ---
         # Should booster item types be a sub class, or just have different functions within this class?
@@ -245,6 +280,7 @@ def main():
         #  -  Invincibility
         #  -  Increased catch width
         #  -  Slow down time
+        #  -  Bigger and Immune
         pass
 
 
@@ -332,6 +368,14 @@ def main():
             if time.time() > next_speed_boost:
                 Speed_Boost()
                 next_speed_boost = time.time() + random.random() * random.randint(25, 55)
+            #   EXTRA LIVES
+            if time.time() > next_extra_lives_time:
+                Extra_Lives()
+                next_extra_lives_time = time.time() + random.randint(2, 4)
+            #   TURTLE
+            if time.time() > next_turtle_time:
+                Turtle(level)
+                next_turtle_time = time.time() + random.randint(5,10)
 
             # Checks and removes status effects
             if has_extra_jump:
@@ -340,6 +384,9 @@ def main():
             if has_speed_boost:
                 if time.time() > speed_boost_ending_time:
                     has_speed_boost = False
+            if has_turtle:
+                if time.time() > turtle_ending_time:
+                    has_turtle = False
             
 
             # Update All Objects
@@ -363,7 +410,10 @@ def main():
                             extra_jump_ending_time = time.time() + 10
                         elif type(catchable) == Speed_Boost:
                             has_speed_boost = True
+                            has_turtle = False
                             speed_boost_ending_time = time.time() + 10
+                        elif type(catchable) == Extra_Lives:
+                            lives_remaining += 1
                 # For the BAD items
                 for avoidable in all_avoidables:
                     if pygame.sprite.collide_rect(player, avoidable):
@@ -374,6 +424,10 @@ def main():
                         elif type(avoidable) == Poison_Apple:
                             lives_remaining = 0
                             player_loss = True
+                        elif type(avoidable) == Turtle:
+                            has_turtle = True
+                            has_speed_boost = False
+                            turtle_ending_time = time.time() + 10
 
             # TIME UP: Win or Lose
             if apples_caught >= apples_needed:
@@ -390,7 +444,7 @@ def main():
             # * * * * * * * * * * * * * * * *
 
             # Draw Background
-            # screen.fill(blue_color)
+            screen.fill(blue_color)
             # *** THIS WILL BE CHANGED WITH THE IMAGES ***
             screen.blit(bg_image, (0, 0))
 
@@ -423,6 +477,8 @@ def main():
             lives_message = font.render('Lives: {}'.format(lives_remaining), True, (255, 255, 255))
             lives_rect = lives_message.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
             screen.blit(lives_message, lives_rect)
+
+            if lives_remaining == 5:
 
             # Print Level
             level_message = font.render('Level {}'.format(level), True, (255, 255, 255))
