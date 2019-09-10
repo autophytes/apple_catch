@@ -25,8 +25,8 @@ def main():
     next_apple_time = time.time()
     next_worm_time = time.time() + 2
     next_poison_time = time.time() + random.randint(10, 40)
-    next_golden_apple = time.time() + random.randint(25, 55) # make this much longer
-    next_extra_jump = time.time() + random.randint(25, 55)
+    next_golden_apple = time.time() + random.randint(1, 2) # make this much longer
+    next_extra_jump = time.time() + random.randint(1, 2)
     next_speed_boost = time.time() + random.randint(1, 2) # make this much longer
     next_extra_lives_time = time.time() + random.randint(2, 4)
     next_turtle_time = time.time() + random.randint(5,10)
@@ -94,7 +94,7 @@ def main():
         # Initialize
         def __init__(self):
             super(Player, self).__init__()
-            self.surf = pygame.transform.scale(player_img, (100, 100)).convert_alpha()
+            self.surf = pygame.transform.scale(player_img, (75, 75)).convert_alpha()
             # self.surf.fill((255, 255, 255))
             self.rect = self.surf.get_rect(center=(starting_width, starting_height))
             self.speed = 5
@@ -181,7 +181,7 @@ def main():
             
             # Object Surface Properties
 
-            self.surf = pygame.transform.scale(apple_img, (50, 50)).convert_alpha()
+            self.surf = pygame.transform.scale(apple_img, (30, 30)).convert_alpha()
 
 
             # self.surf.fill((255, 255, 255))
@@ -195,7 +195,7 @@ def main():
             super(Golden_Apple, self).__init__()
 
             # Object surface properties
-            self.surf = pygame.transform.scale(gold_apple_img, (61, 50)).convert_alpha()
+            self.surf = pygame.transform.scale(gold_apple_img, (30, 30)).convert_alpha()
             # self.surf.fill((212, 175, 55))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
@@ -208,7 +208,7 @@ def main():
             super(Worm, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.transform.scale(worm_img, (40, 40)).convert_alpha()
+            self.surf = pygame.transform.scale(worm_img, (35, 35)).convert_alpha()
             # self.surf.fill((0, 0, 0))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
@@ -225,7 +225,7 @@ def main():
             super(Poison_Apple, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.transform.scale(bad_apple_img, (50, 50)).convert_alpha()
+            self.surf = pygame.transform.scale(bad_apple_img, (30, 30)).convert_alpha()
             # self.surf.fill((148, 178, 28))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
@@ -242,7 +242,7 @@ def main():
             super(Extra_Jump, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.transform.scale(extra_jump_img, (35, 40)).convert_alpha()
+            self.surf = pygame.transform.scale(extra_jump_img, (30, 58)).convert_alpha()
             # self.surf.fill((20, 20, 210))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
@@ -255,7 +255,7 @@ def main():
             super(Speed_Boost, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.transform.scale(speed_img, (35, 35)).convert_alpha()
+            self.surf = pygame.transform.scale(speed_img, (39, 30)).convert_alpha()
             # self.surf.fill((175, 55, 212))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
@@ -269,7 +269,7 @@ def main():
         def __init__(self):
             super(Extra_Lives, self).__init__()
 
-            self.surf = pygame.transform.scale(red_heart_img, (50, 50)).convert_alpha()
+            self.surf = pygame.transform.scale(red_heart_img, (30, 30)).convert_alpha()
             # self.surf.fill((240, 180, 240))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
@@ -281,7 +281,7 @@ def main():
             super(Turtle, self).__init__()
 
             # Object Surface Properties
-            self.surf = pygame.transform.scale(slow_img, (40, 40)).convert_alpha()
+            self.surf = pygame.transform.scale(slow_img, (44, 25)).convert_alpha()
             # self.surf.fill((240, 94, 35))
             self.rect = self.surf.get_rect(center=(self.starting_x, -50))
 
@@ -423,7 +423,7 @@ def main():
             if player_loss == False and player_victory == False:
                 # For the GOOD items
                 for catchable in all_catchables:
-                    if pygame.sprite.collide_rect(player, catchable):
+                    if pygame.sprite.collide_rect_ratio(0.6)(player, catchable):
                         catchable.kill()
                         catchable.rect.top = height + 100
                         if type(catchable) == Apple:
@@ -442,7 +442,7 @@ def main():
                             lives_remaining = min(lives_remaining, max_lives)
                 # For the BAD items
                 for avoidable in all_avoidables:
-                    if pygame.sprite.collide_rect(player, avoidable):
+                    if pygame.sprite.collide_rect_ratio(0.6)(player, avoidable):
                         avoidable.kill()
                         avoidable.rect.top = height + 100
                         if type(avoidable) == Worm:
