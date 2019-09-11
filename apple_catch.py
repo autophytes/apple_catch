@@ -19,8 +19,8 @@ def main():
     # Variables
     level = 0
     level_reset = 1                         # Toggles starting level
-    max_lives = 5                           # Toggles max lives
-    apples_reset = 12                       # Toggles apples needed
+    max_lives = 5                           # To toggle max lives, edit difficulty list above
+    apples_reset = 12                       # To toggle apples required, edit difficulty list above
     game_length = 31                        # Toggles time (seconds) per level. Add 1 to desired number.
     player_victory = False
     repeat_game = True
