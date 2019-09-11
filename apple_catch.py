@@ -12,13 +12,13 @@ def main():
     width = 600
     height = 600
     blue_color = (97, 159, 182)
-    starting_width = int( width / 2)
+    starting_width = int( width / 2 )
     starting_height = int( height - 58 )
 
     # Variables
     level = 0
     level_reset = 1                         # Toggles starting level
-    max_lives = 3                           # Toggles max lives
+    max_lives = 5                           # Toggles max lives
     apples_reset = 12                       # Toggles apples needed
     game_length = 31                        # Toggles time (seconds) per level. Add 1 to desired number.
     player_victory = False
@@ -68,12 +68,15 @@ def main():
 
     # Initializing Text
     font = pygame.font.Font(None, 30)
+    large_font = pygame.font.Font(None, 70)
     victory_message = font.render('Level Won! Press ENTER to continue', True, (255, 255, 255))
     victory_rect = victory_message.get_rect(center=(int(width/2), int(height/2)))
     loss_message = font.render('You lost! To play again, press ENTER', True, (255, 255, 255))
     loss_rect = loss_message.get_rect(center=(int(width/2), int(height/2)))
-    game_won_message = font.render('Congratulations! You Won! To play again, press ENTER', True, (255, 255, 255))
-    game_won_rect = game_won_message.get_rect(center=(int(width/2), int(height/2)))
+    game_won_message = font.render('You Won! To play again, press ENTER', True, (255, 255, 255))
+    game_won_rect = game_won_message.get_rect(center=(int(width/2), int(height/2) + 10))
+    congrats_message = large_font.render('Congratulations!', True, (255, 255, 255))
+    congrats_rect = congrats_message.get_rect(midbottom=(int(width/2), game_won_rect.top - 10))
 
     # Victory / Loss Overlay
     overlay_surf = pygame.Surface((width, height))
@@ -460,8 +463,8 @@ def main():
         # Worm Time - Toggles based on level
         min_worm_time = 2.25 - level * 0.2
         max_worm_time = 5.0 - level * 0.4
-        min_poison_time = 12 - level * 1   # (Level 10: 2) (Level 4: 8)
-        max_poison_time = 30 - level * 2.5     # (Level 10: 5) (Level 4: 20)
+        min_poison_time = 12 - level * 1        # (Level 10: 2) (Level 4: 8)
+        max_poison_time = 30 - level * 2.5      # (Level 10: 5) (Level 4: 20)
 
         # Generate Time Variables
         next_apple_time = time.time()           # Start every level with an apple
@@ -635,6 +638,7 @@ def main():
             # Draw Victory/Loss Message
             if player_victory and level == 10:
                 screen.blit(game_won_message, game_won_rect)
+                screen.blit(congrats_message, congrats_rect)
                 if victory_music_unplayed:
                     pygame.mixer.Sound.play(victory)
                     victory_music_unplayed = False
