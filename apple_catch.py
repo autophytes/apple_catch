@@ -12,24 +12,21 @@ def main():
     width = 600
     height = 600
     blue_color = (97, 159, 182)
-    starting_width = int(width/2)
-    starting_height = int(height - 58)
+    starting_width = int( width / 2)
+    starting_height = int( height - 58 )
 
     # Variables
     level = 0
-    level_reset = 1
-    max_lives = 5
-    game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
+    level_reset = 1                         # Toggles starting level
+    max_lives = 3                           # Toggles max lives
+    apples_reset = 12                       # Toggles apples needed
+    game_length = 31                        # Toggles time (seconds) per level. Add 1 to desired number.
     player_victory = False
     repeat_game = True
     show_title_screen = True
     fade_title_screen = False
+    clock_tick_playing = False
     title_fade_index = 255
-
-    # Time Counters
-    extra_jump_ending_time = 0
-    speed_boost_ending_time = 0
-    turtle_ending_time = 0
 
     next_apple_time = 0.0
     next_worm_time = 0.0
@@ -39,12 +36,11 @@ def main():
     next_poison_time = 0.0
     next_extra_lives_time = 0.0
     next_golden_apple = 0.0
-    next_boost_tick_sound = 0.0
 
     # Setting up the screen and clock
     pygame.init()
     screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption('Apple Catch')
+    pygame.display.set_caption('Hectic Harvest')
     clock = pygame.time.Clock()
 
     # Initialize Music
@@ -101,7 +97,7 @@ def main():
     # Load Background Image
     bg_image = pygame.image.load('images/background_cropped.png')
     bg_image = pygame.transform.scale(bg_image, (600, 600)).convert()
-    title_image = pygame.image.load('images/title_screen.png')
+    title_image = pygame.image.load('images/title_menu.png')
     title_image = pygame.transform.scale(title_image, (600, 600)).convert()
 
     #Load Class Images
@@ -117,11 +113,10 @@ def main():
 
 
 
-
     # * * * * * * * * * * * * *
     # * * *    CLASSES    * * *
     # * * * * * * * * * * * * *
-    
+
     class Player(pygame.sprite.Sprite):
         # Initialize
         def __init__(self):
@@ -146,6 +141,7 @@ def main():
             elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
                 self.rect.move_ip(self.speed, 0)   
 
+            # Movement Boundaries
             if self.rect.right > width - 15:
                 self.rect.right = width - 15
             elif self.rect.left < 15:
@@ -153,7 +149,9 @@ def main():
 
             # Extra Jump
             if has_extra_jump:
-                self.velocity_reset = 9
+                if self.velocity == self.velocity_reset:
+                    self.velocity_reset = 9
+                    self.velocity = self.velocity_reset
             else:
                 self.velocity_reset = 6
 
@@ -167,19 +165,22 @@ def main():
 
             # Calculate Jump
             if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
-                self.isJump = True   
+                self.isJump = True 
+
             if self.isJump:
+                
+                # Select Correct Sound for Different Jumps
                 if self.velocity == self.velocity_reset and self.velocity_reset == 6:
                     pygame.mixer.Sound.play(jumpy)
                 elif self.velocity == self.velocity_reset and self.velocity_reset == 9:
                     pygame.mixer.Sound.play(jumpy_louder)
-    
+
+                # Calculate Force, Update Location, Decrement Velocity
                 self.force = self.momentum * self.velocity
-
                 self.rect.move_ip(0, -self.force)
-
                 self.velocity -= .4
-
+                
+                # Jump Boundaries
                 if self.rect.bottom >= starting_height + 37:
                     self.rect.bottom = starting_height + 37
                     self.isJump = False
@@ -363,7 +364,7 @@ def main():
         return next_turtle_time
     
     def calc_next_extra_jump():
-        next_extra_jump = time.time() + random.randint(1, 20)
+        next_extra_jump = time.time() + random.randint(1, 30)
         return next_extra_jump
     
     def calc_next_poison_time():
@@ -371,11 +372,11 @@ def main():
         return next_poison_time
     
     def calc_next_extra_lives_time():
-        next_extra_lives_time = time.time() + random.randint(1, 60)
+        next_extra_lives_time = time.time() + random.randint(1, 90)
         return next_extra_lives_time
     
     def calc_next_golden_apple():
-        next_golden_apple = time.time() + random.randint(1, 60)
+        next_golden_apple = time.time() + random.randint(1, 90)
         return next_golden_apple
 
 
@@ -403,7 +404,8 @@ def main():
 
         # Fades Out The Title Screen
         if fade_title_screen:
-            title_fade_index -= 5
+            title_fade_index -= 10
+            title_fade_index = max(title_fade_index, 0)
             title_image.set_alpha(title_fade_index)
             if title_fade_index == 0:
                 fade_title_screen = False
@@ -441,10 +443,19 @@ def main():
         game_over_music_unplayed = True
         victory_music_unplayed = True
         level_up_music_unplayed = True
-        clock_tick_playing = False
         end_time = time.time() + game_length
         apples_caught = 0
-        apples_needed = 10
+        apples_needed = apples_reset
+
+        # # Resets Booster Clock Tick
+        if clock_tick_playing:
+            tick_channel.stop()
+            clock_tick_playing = False
+
+        # Resets Time Counters
+        extra_jump_ending_time = 0
+        speed_boost_ending_time = 0
+        turtle_ending_time = 0
 
         # Worm Time - Toggles based on level
         min_worm_time = 2.25 - level * 0.2
@@ -659,10 +670,10 @@ def main():
 
             # Draw Gray Hearts for Lives Lost
             lives_lost = max_lives - lives_remaining
-            if lives_lost == 5:
+            if lives_lost == max_lives:
                 gray_health_rect = gray_health_img.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
                 screen.blit(gray_health_img, gray_health_rect)
-            if lives_lost > 0 and lives_lost < 5:
+            if lives_lost > 0 and lives_lost < max_lives:
                 gray_health_rect = gray_health_img.get_rect(topright=(health_rect.left - 5, health_rect.top))
                 screen.blit(gray_health_img, gray_health_rect)
             i = 2
@@ -707,7 +718,6 @@ def main():
                     tick_channel.play(tick)
                     clock_tick_playing = True
             elif clock_tick_playing:
-                print("Should stop playing")
                 tick_channel.stop()
                 clock_tick_playing = False
                 
