@@ -458,6 +458,13 @@ def main():
     max_lives = difficulty[current_difficulty][1]
     apples_reset = difficulty[current_difficulty][2]
 
+    # On Hard, Speeds Up Music
+    if current_difficulty == len(difficulty) - 1:
+        pygame.mixer.music.fadeout(1000)
+        pygame.mixer.music.load('sounds/music_fast.wav')
+        pygame.mixer.music.set_volume(.3)
+        pygame.mixer.music.play(-1)
+
 
     # * * * * * * * * * * * * * *
     # * * * OUTER GAME LOOP * * *
