@@ -12,20 +12,21 @@ def main():
     width = 600
     height = 600
     blue_color = (97, 159, 182)
-    starting_width = int(width/2)
-    starting_height = int(height - 58)
+    starting_width = int( width / 2)
+    starting_height = int( height - 58 )
 
     # Variables
     level = 0
-    level_reset = 1
-    max_lives = 5
-    game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
+    level_reset = 1                         # Toggles starting level
+    max_lives = 3                           # Toggles max lives
+    apples_reset = 12                       # Toggles apples needed
+    game_length = 31                        # Toggles time (seconds) per level. Add 1 to desired number.
     player_victory = False
-
-    # Time Counters
-    extra_jump_ending_time = 0
-    speed_boost_ending_time = 0
-    turtle_ending_time = 0
+    repeat_game = True
+    show_title_screen = True
+    fade_title_screen = False
+    clock_tick_playing = False
+    title_fade_index = 255
 
     next_apple_time = 0.0
     next_worm_time = 0.0
@@ -39,26 +40,31 @@ def main():
     # Setting up the screen and clock
     pygame.init()
     screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption('Apple Catch')
+    pygame.display.set_caption('Hectic Harvest')
     clock = pygame.time.Clock()
 
-    # Initialize Sounds
+    # Initialize Music
     pygame.mixer.music.load('sounds/music.wav')
     pygame.mixer.music.set_volume(.3)
     pygame.mixer.music.play(-1)
+
+    # Initialize Sounds
     bite = pygame.mixer.Sound('sounds/bite.wav')
     good_sound = pygame.mixer.Sound('sounds/positive.wav')
     goldapple = pygame.mixer.Sound('sounds/gold_apple.wav')
     negative_sound = pygame.mixer.Sound('sounds/negative.wav')
-    pygame.mixer.music.set_volume(1)
     game_over = pygame.mixer.Sound('sounds/GameOver.wav')
+    game_over.set_volume(0.3)
     jumpy = pygame.mixer.Sound('sounds/jumpy.wav')
     jumpy.set_volume(0.7)
     jumpy_louder = pygame.mixer.Sound('sounds/jumpy.wav')
     jumpy_louder.set_volume(1)
     victory = pygame.mixer.Sound('sounds/victory.wav')
     level_up = pygame.mixer.Sound('sounds/level_up.wav')
+    level_up.set_volume(0.5)
     extra_life = pygame.mixer.Sound('sounds/1up.wav')
+    tick = pygame.mixer.Sound('sounds/clock_10_sec.wav')
+    tick_channel = pygame.mixer.Channel(0)
 
     # Initializing Text
     font = pygame.font.Font(None, 30)
@@ -91,6 +97,8 @@ def main():
     # Load Background Image
     bg_image = pygame.image.load('images/background_cropped.png')
     bg_image = pygame.transform.scale(bg_image, (600, 600)).convert()
+    title_image = pygame.image.load('images/title_menu.png')
+    title_image = pygame.transform.scale(title_image, (600, 600)).convert()
 
     #Load Class Images
     player_img = pygame.image.load('images/guy_with_basket.png')
@@ -104,10 +112,11 @@ def main():
     slow_img = pygame.image.load('images/slow.png')
 
 
+
     # * * * * * * * * * * * * *
     # * * *    CLASSES    * * *
     # * * * * * * * * * * * * *
-    
+
     class Player(pygame.sprite.Sprite):
         # Initialize
         def __init__(self):
@@ -132,6 +141,7 @@ def main():
             elif pressed_keys[K_RIGHT] or pressed_keys[K_d]:      # East
                 self.rect.move_ip(self.speed, 0)   
 
+            # Movement Boundaries
             if self.rect.right > width - 15:
                 self.rect.right = width - 15
             elif self.rect.left < 15:
@@ -139,7 +149,9 @@ def main():
 
             # Extra Jump
             if has_extra_jump:
-                self.velocity_reset = 9
+                if self.velocity == self.velocity_reset:
+                    self.velocity_reset = 9
+                    self.velocity = self.velocity_reset
             else:
                 self.velocity_reset = 6
 
@@ -153,19 +165,22 @@ def main():
 
             # Calculate Jump
             if pressed_keys[K_SPACE] or pressed_keys[K_w] or pressed_keys[K_UP]:
-                self.isJump = True   
+                self.isJump = True 
+
             if self.isJump:
+                
+                # Select Correct Sound for Different Jumps
                 if self.velocity == self.velocity_reset and self.velocity_reset == 6:
                     pygame.mixer.Sound.play(jumpy)
                 elif self.velocity == self.velocity_reset and self.velocity_reset == 9:
                     pygame.mixer.Sound.play(jumpy_louder)
-    
+
+                # Calculate Force, Update Location, Decrement Velocity
                 self.force = self.momentum * self.velocity
-
                 self.rect.move_ip(0, -self.force)
-
                 self.velocity -= .4
-
+                
+                # Jump Boundaries
                 if self.rect.bottom >= starting_height + 37:
                     self.rect.bottom = starting_height + 37
                     self.isJump = False
@@ -349,7 +364,7 @@ def main():
         return next_turtle_time
     
     def calc_next_extra_jump():
-        next_extra_jump = time.time() + random.randint(1, 20)
+        next_extra_jump = time.time() + random.randint(1, 30)
         return next_extra_jump
     
     def calc_next_poison_time():
@@ -357,13 +372,50 @@ def main():
         return next_poison_time
     
     def calc_next_extra_lives_time():
-        next_extra_lives_time = time.time() + random.randint(1, 60)
+        next_extra_lives_time = time.time() + random.randint(1, 90)
         return next_extra_lives_time
     
     def calc_next_golden_apple():
-        next_golden_apple = time.time() + random.randint(1, 60)
+        next_golden_apple = time.time() + random.randint(1, 90)
         return next_golden_apple
 
+
+    # * * * * * * * * * * * * * *
+    # * * *  TITLE SCREEN   * * *
+    # * * * * * * * * * * * * * *
+
+    # Display / Fade Out Title Screen
+    while show_title_screen or fade_title_screen:
+                # Event Handling
+        for event in pygame.event.get():
+            # Player Closed Pygame
+            if event.type == pygame.QUIT:
+                repeat_game = False
+                show_title_screen = False
+            elif event.type == KEYDOWN:
+                # Player Hit ESC to Quit
+                if event.key == K_ESCAPE:
+                    repeat_game = False
+                    show_title_screen = False
+                # Player Hit ENTER to Continue / Restart
+                if event.key == K_RETURN:
+                    show_title_screen = False
+                    fade_title_screen = True
+
+        # Fades Out The Title Screen
+        if fade_title_screen:
+            title_fade_index -= 10
+            title_fade_index = max(title_fade_index, 0)
+            title_image.set_alpha(title_fade_index)
+            if title_fade_index == 0:
+                fade_title_screen = False
+        
+        # Displays the underlying background image and the title overay
+        screen.blit(bg_image, (0, 0))
+        screen.blit(title_image, (0, 0))
+
+        pygame.display.update()
+        clock.tick(60)
 
 
     # * * * * * * * * * * * * * *
@@ -371,7 +423,7 @@ def main():
     # * * * * * * * * * * * * * *
     
     # OUTER LOOP - New Levels & New Games
-    repeat_game = True
+    
     while repeat_game:
 
         # Level Increment
@@ -388,9 +440,22 @@ def main():
         has_extra_jump = False
         has_speed_boost = False
         has_turtle = False
+        game_over_music_unplayed = True
+        victory_music_unplayed = True
+        level_up_music_unplayed = True
         end_time = time.time() + game_length
         apples_caught = 0
-        apples_needed = 10
+        apples_needed = apples_reset
+
+        # # Resets Booster Clock Tick
+        if clock_tick_playing:
+            tick_channel.stop()
+            clock_tick_playing = False
+
+        # Resets Time Counters
+        extra_jump_ending_time = 0
+        speed_boost_ending_time = 0
+        turtle_ending_time = 0
 
         # Worm Time - Toggles based on level
         min_worm_time = 2.25 - level * 0.2
@@ -526,7 +591,6 @@ def main():
                             pygame.mixer.Sound.play(negative_sound)
                             lives_remaining -= 1
                         elif type(avoidable) == Poison_Apple:
-                            pygame.mixer.Sound.play(game_over)
                             lives_remaining = 0
                             player_loss = True
                         elif type(avoidable) == Turtle:
@@ -540,10 +604,16 @@ def main():
                 player_victory = True
             elif time.time() > end_time:
                 player_loss = True
+                if game_over_music_unplayed:
+                    pygame.mixer.Sound.play(game_over)
+                    game_over_music_unplayed = False
 
             # LIVES: Win or Lose
             if lives_remaining <= 0:
                 player_loss = True
+                if game_over_music_unplayed:
+                    pygame.mixer.Sound.play(game_over)
+                    game_over_music_unplayed = False
 
             # * * * * * * * * * * * * * * * *
             # * * * DRAW OBJECTS / TEXT * * *
@@ -551,7 +621,6 @@ def main():
 
             # Draw Background
             screen.fill(blue_color)
-            # *** THIS WILL BE CHANGED WITH THE IMAGES ***
             screen.blit(bg_image, (0, 0))
 
             # Draw All Objects
@@ -566,8 +635,14 @@ def main():
             # Draw Victory/Loss Message
             if player_victory and level == 10:
                 screen.blit(game_won_message, game_won_rect)
+                if victory_music_unplayed:
+                    pygame.mixer.Sound.play(victory)
+                    victory_music_unplayed = False
             elif player_victory:
                 screen.blit(victory_message, victory_rect)
+                if level_up_music_unplayed:
+                    pygame.mixer.Sound.play(level_up)
+                    level_up_music_unplayed = False
             elif player_loss:
                 screen.blit(loss_message, loss_rect)
             
@@ -595,10 +670,10 @@ def main():
 
             # Draw Gray Hearts for Lives Lost
             lives_lost = max_lives - lives_remaining
-            if lives_lost == 5:
+            if lives_lost == max_lives:
                 gray_health_rect = gray_health_img.get_rect(topright=(apple_rect.right, apple_rect.bottom + 5))
                 screen.blit(gray_health_img, gray_health_rect)
-            if lives_lost > 0 and lives_lost < 5:
+            if lives_lost > 0 and lives_lost < max_lives:
                 gray_health_rect = gray_health_img.get_rect(topright=(health_rect.left - 5, health_rect.top))
                 screen.blit(gray_health_img, gray_health_rect)
             i = 2
@@ -635,6 +710,16 @@ def main():
                 if i != 0:
                     top_left_messages[i][1] = top_left_messages[i][0].get_rect(topleft=(top_left_messages[i-1][1].left, top_left_messages[i-1][1].bottom + 5))
                 screen.blit(top_left_messages[i][0], top_left_messages[i][1])
+
+            # Ticks if we've got Boost Messages
+            if (extra_jump_ending_time > time.time() + 1 and extra_jump_ending_time < time.time() + 3.5) or (speed_boost_ending_time > time.time() + 1 and speed_boost_ending_time < time.time() + 3.5) or (turtle_ending_time > time.time() + 1 and turtle_ending_time < time.time() + 3.5):
+                if not clock_tick_playing:
+                    # pygame.mixer.Sound.play(tick)
+                    tick_channel.play(tick)
+                    clock_tick_playing = True
+            elif clock_tick_playing:
+                tick_channel.stop()
+                clock_tick_playing = False
                 
 
             # Refresh Game Display
