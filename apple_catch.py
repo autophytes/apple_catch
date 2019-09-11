@@ -21,6 +21,10 @@ def main():
     max_lives = 5
     game_length = 31        # Set at 31 so the display starts at 30 and ends at 0.
     player_victory = False
+    repeat_game = True
+    show_title_screen = True
+    fade_title_screen = False
+    title_fade_index = 255
 
     # Time Counters
     extra_jump_ending_time = 0
@@ -43,10 +47,12 @@ def main():
     pygame.display.set_caption('Apple Catch')
     clock = pygame.time.Clock()
 
-    # Initialize Sounds
+    # Initialize Music
     pygame.mixer.music.load('sounds/music.wav')
     pygame.mixer.music.set_volume(.3)
     pygame.mixer.music.play(-1)
+
+    # Initialize Sounds
     bite = pygame.mixer.Sound('sounds/bite.wav')
     good_sound = pygame.mixer.Sound('sounds/positive.wav')
     goldapple = pygame.mixer.Sound('sounds/gold_apple.wav')
@@ -63,7 +69,6 @@ def main():
     extra_life = pygame.mixer.Sound('sounds/1up.wav')
     tick = pygame.mixer.Sound('sounds/clock_10_sec.wav')
     tick_channel = pygame.mixer.Channel(0)
-    # tick_channel.queue(tick)
 
     # Initializing Text
     font = pygame.font.Font(None, 30)
@@ -96,6 +101,8 @@ def main():
     # Load Background Image
     bg_image = pygame.image.load('images/background_cropped.png')
     bg_image = pygame.transform.scale(bg_image, (600, 600)).convert()
+    title_image = pygame.image.load('images/title_screen.png')
+    title_image = pygame.transform.scale(title_image, (600, 600)).convert()
 
     #Load Class Images
     player_img = pygame.image.load('images/guy_with_basket.png')
@@ -107,6 +114,8 @@ def main():
     speed_img = pygame.image.load('images/speed.png')
     red_heart_img = pygame.image.load('images/purpleheart.png')
     slow_img = pygame.image.load('images/slow.png')
+
+
 
 
     # * * * * * * * * * * * * *
@@ -370,13 +379,49 @@ def main():
         return next_golden_apple
 
 
+    # * * * * * * * * * * * * * *
+    # * * *  TITLE SCREEN   * * *
+    # * * * * * * * * * * * * * *
+
+    # Display / Fade Out Title Screen
+    while show_title_screen or fade_title_screen:
+                # Event Handling
+        for event in pygame.event.get():
+            # Player Closed Pygame
+            if event.type == pygame.QUIT:
+                repeat_game = False
+                show_title_screen = False
+            elif event.type == KEYDOWN:
+                # Player Hit ESC to Quit
+                if event.key == K_ESCAPE:
+                    repeat_game = False
+                    show_title_screen = False
+                # Player Hit ENTER to Continue / Restart
+                if event.key == K_RETURN:
+                    show_title_screen = False
+                    fade_title_screen = True
+
+        # Fades Out The Title Screen
+        if fade_title_screen:
+            title_fade_index -= 5
+            title_image.set_alpha(title_fade_index)
+            if title_fade_index == 0:
+                fade_title_screen = False
+        
+        # Displays the underlying background image and the title overay
+        screen.blit(bg_image, (0, 0))
+        screen.blit(title_image, (0, 0))
+
+        pygame.display.update()
+        clock.tick(60)
+
 
     # * * * * * * * * * * * * * *
     # * * * OUTER GAME LOOP * * *
     # * * * * * * * * * * * * * *
     
     # OUTER LOOP - New Levels & New Games
-    repeat_game = True
+    
     while repeat_game:
 
         # Level Increment
@@ -565,7 +610,6 @@ def main():
 
             # Draw Background
             screen.fill(blue_color)
-            # *** THIS WILL BE CHANGED WITH THE IMAGES ***
             screen.blit(bg_image, (0, 0))
 
             # Draw All Objects
