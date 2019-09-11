@@ -14,6 +14,7 @@ def main():
     blue_color = (97, 159, 182)
     starting_width = int( width / 2 )
     starting_height = int( height - 58 )
+    difficulty = [['easy', 5, 10], ['medium', 3, 12], ['hard', 1, 14]]
 
     # Variables
     level = 0
@@ -27,6 +28,7 @@ def main():
     fade_title_screen = False
     clock_tick_playing = False
     title_fade_index = 255
+    current_difficulty = 0
 
     next_apple_time = 0.0
     next_worm_time = 0.0
@@ -69,6 +71,7 @@ def main():
     # Initializing Text
     font = pygame.font.Font(None, 30)
     large_font = pygame.font.Font(None, 70)
+    med_font = pygame.font.Font(None, 50)
     victory_message = font.render('Level Won! Press ENTER to continue', True, (255, 255, 255))
     victory_rect = victory_message.get_rect(center=(int(width/2), int(height/2)))
     loss_message = font.render('You lost! To play again, press ENTER', True, (255, 255, 255))
@@ -77,6 +80,12 @@ def main():
     game_won_rect = game_won_message.get_rect(center=(int(width/2), int(height/2) + 10))
     congrats_message = large_font.render('Congratulations!', True, (255, 255, 255))
     congrats_rect = congrats_message.get_rect(midbottom=(int(width/2), game_won_rect.top - 10))
+    easy_message = med_font.render('EASY', True, (255, 255, 255)).convert_alpha()
+    easy_rect = easy_message.get_rect(center=(250, 473))
+    med_message = med_font.render('MEDIUM', True, (255, 255, 255)).convert_alpha()
+    med_rect = med_message.get_rect(center=(250, 473))
+    hard_message = med_font.render('HARD', True, (255, 255, 255)).convert_alpha()
+    hard_rect = hard_message.get_rect(center=(250, 473))
 
     # Victory / Loss Overlay
     overlay_surf = pygame.Surface((width, height))
@@ -389,7 +398,7 @@ def main():
 
     # Display / Fade Out Title Screen
     while show_title_screen or fade_title_screen:
-                # Event Handling
+        # Event Handling
         for event in pygame.event.get():
             # Player Closed Pygame
             if event.type == pygame.QUIT:
@@ -404,12 +413,28 @@ def main():
                 if event.key == K_RETURN:
                     show_title_screen = False
                     fade_title_screen = True
+                # Difficulty
+                if event.key == K_UP:
+                    pygame.mixer.Sound.play(jumpy)
+                    if current_difficulty < len(difficulty) - 1:
+                        current_difficulty += 1
+                    else:
+                        current_difficulty = 0
+                if event.key == K_DOWN:
+                    pygame.mixer.Sound.play(jumpy)
+                    if current_difficulty == 0:
+                        current_difficulty = len(difficulty) - 1
+                    else:
+                        current_difficulty -= 1
 
         # Fades Out The Title Screen
         if fade_title_screen:
             title_fade_index -= 10
             title_fade_index = max(title_fade_index, 0)
             title_image.set_alpha(title_fade_index)
+            easy_message.set_alpha(title_fade_index)
+            med_message.set_alpha(title_fade_index)
+            hard_message.set_alpha(title_fade_index)
             if title_fade_index == 0:
                 fade_title_screen = False
         
@@ -417,8 +442,21 @@ def main():
         screen.blit(bg_image, (0, 0))
         screen.blit(title_image, (0, 0))
 
+        # Displays the Difficulty Text
+        if not fade_title_screen and show_title_screen:
+            if difficulty[current_difficulty][0] == 'easy':
+                screen.blit(easy_message, easy_rect)
+            elif difficulty[current_difficulty][0] == 'medium':
+                screen.blit(med_message, med_rect)
+            elif difficulty[current_difficulty][0] == 'hard':
+                screen.blit(hard_message, hard_rect)
+
         pygame.display.update()
         clock.tick(60)
+
+    # Sets Lives and Apples Based on Level
+    max_lives = difficulty[current_difficulty][1]
+    apples_reset = difficulty[current_difficulty][2]
 
 
     # * * * * * * * * * * * * * *
